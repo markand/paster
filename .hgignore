@@ -1,0 +1,19 @@
+# Build directory used in lots of documentation.
+^build
+
+# Qt Creator creates CMakeLists.txt.user.
+^CMakeLists\.txt\.user$
+
+# vim/emacs specific.
+^tags$
+^tags.lock$
+^tags.temp$
+\.swp$
+\.swo$
+
+# macOS specific.
+\.DS_Store$
+
+# Temporary files.
+\.o$
+\.d$

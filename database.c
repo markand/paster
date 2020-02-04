@@ -1,0 +1,268 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <sqlite3.h>
+
+#include "database.h"
+#include "log.h"
+#include "paste.h"
+#include "util.h"
+
+/* sqlite3 use const unsigned char *. */
+#define DUP(s) estrdup((const char *)(s))
+
+static sqlite3 *db;
+
+static const char *sql_init =
+	"BEGIN EXCLUSIVE TRANSACTION;\n"
+	"\n"
+	"CREATE TABLE IF NOT EXISTS paste(\n"
+	"  uuid TEXT PRIMARY KEY,\n"
+	"  title TEXT,\n"
+	"  author TEXT,\n"
+	"  language TEXT,\n"
+	"  code TEXT,\n"
+	"  date INT DEFAULT CURRENT_TIMESTAMP,\n"
+	"  visible INTEGER DEFAULT 1,\n"
+	"  duration INT\n"
+	");\n"
+	"\n"
+	"END TRANSACTION";
+
+static const char *sql_get =
+	"SELECT uuid\n"
+	"     , title\n"
+	"     , author\n"
+	"     , language\n"
+	"     , code\n"
+	"     , strftime('%s', date)\n"
+	"     , visible\n"
+	"     , duration\n"
+	"  FROM paste\n"
+	" WHERE id = ?";
+
+static const char *sql_insert =
+	"INSERT INTO paste(\n"
+	"  uuid,\n"
+	"  title,\n"
+	"  author,\n"
+	"  language,\n"
+	"  code,\n"
+	"  visible,\n"
+	"  duration\n"
+	") VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+static const char *sql_recents =
+	"SELECT uuid\n"
+	"     , title\n"
+	"     , author\n"
+	"     , language\n"
+	"     , code\n"
+	"     , strftime('%s', date) AS date\n"
+	"     , visible\n"
+	"     , duration\n"
+	"  FROM paste\n"
+	" ORDER BY date\n"
+	" LIMIT ?\n";
+
+static const char *sql_clear =
+	"BEGIN EXCLUSIVE TRANSACTION;\n"
+	"\n"
+	"DELETE\n"
+	"  FROM paste\n"
+	" WHERE strftime('%s', 'now') - strftime('%s', date) >= duration;"
+	"\n"
+	"END TRANSACTION";
+
+static const char *
+create_id(void)
+{
+	static char uuid[256];
+
+	/*
+	 * Not a very strong generation but does not require to link against
+	 * util-linux.
+	 *
+	 * See https://stackoverflow.com/questions/2174768/generating-random-uuids-in-linux
+	 */
+	sprintf(uuid, "%x%x-%x-%x-%x-%x%x%x",
+	    rand(), rand(),
+	    rand(),
+	    ((rand() & 0x0fff) | 0x4000),
+	    rand() % 0x3fff + 0x8000,
+	    rand(), rand(), rand());
+
+	return uuid;
+}
+
+static void
+convert(sqlite3_stmt *stmt, struct paste *paste)
+{
+	paste->uuid = DUP(sqlite3_column_text(stmt, 0));
+	paste->title = DUP(sqlite3_column_text(stmt, 1));
+	paste->author = DUP(sqlite3_column_text(stmt, 2));
+	paste->language = DUP(sqlite3_column_text(stmt, 3));
+	paste->code = DUP(sqlite3_column_text(stmt, 4));
+	paste->timestamp = sqlite3_column_int64(stmt, 5);
+	paste->visible = sqlite3_column_int(stmt, 6);
+	paste->duration = sqlite3_column_int64(stmt, 7);
+}
+
+bool
+database_open(const char *path)
+{
+	assert(path);
+
+	log_debug("opening database: %s\n", path);
+
+	if (sqlite3_open(path, &db) != SQLITE_OK) {
+		log_warn("unable to open %s: %s\n", path, sqlite3_errmsg(db));
+		return false;
+	}
+
+	if (sqlite3_exec(db, sql_init, NULL, NULL, NULL) != SQLITE_OK) {
+		log_warn("unable to initialize %s: %s\n", path, sqlite3_errmsg(db));
+		return false;
+	}
+
+	log_debug("successfully opened database: %s\n", path);
+
+	return true;
+}
+
+bool
+database_recents(struct paste *pastes, size_t *max)
+{
+	assert(pastes);
+	assert(max);
+
+	sqlite3_stmt *stmt = NULL;
+
+	memset(pastes, 0, *max * sizeof (struct paste));
+
+	if (sqlite3_prepare(db, sql_recents, -1, &stmt, NULL) != SQLITE_OK ||
+	    sqlite3_bind_int64(stmt, 1, *max) != SQLITE_OK)
+		goto sqlite_err;
+
+	size_t i = 0;
+
+	for (; i < *max && sqlite3_step(stmt) == SQLITE_ROW; ++i)
+		convert(stmt, &pastes[i]);
+
+	sqlite3_finalize(stmt);
+	*max = i;
+
+	return true;
+
+sqlite_err:
+	log_warn("database error (recents): %s\n", sqlite3_errmsg(db));
+
+	if (stmt)
+		sqlite3_finalize(stmt);
+
+	return (*max = 0);
+}
+
+bool
+database_get(struct paste *paste, const char *uuid)
+{
+	assert(paste);
+	assert(uuid);
+
+	memset(paste, 0, sizeof (struct paste));
+
+	sqlite3_stmt* stmt = NULL;
+
+	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) != SQLITE_OK ||
+	    sqlite3_bind_text(stmt, 1, uuid, -1, NULL) != SQLITE_OK)
+		goto sqlite_err;
+
+	switch (sqlite3_step(stmt)) {
+	case SQLITE_ROW:
+		convert(stmt, paste);
+		break;
+	case SQLITE_MISUSE:
+	case SQLITE_ERROR:
+		goto sqlite_err;
+	default:
+		break;
+	}
+
+	sqlite3_finalize(stmt);
+
+	return true;
+
+sqlite_err:
+	if (stmt)
+		sqlite3_finalize(stmt);
+
+	log_warn("database error (get): %s", sqlite3_errmsg(db));
+
+	return false;
+}
+
+bool
+database_insert(struct paste *paste)
+{
+	assert(paste);
+
+	sqlite3_stmt* stmt = NULL;
+
+	if (sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL) != SQLITE_OK) {
+		log_warn("could not lock database: %s\n", sqlite3_errmsg(db));
+		return false;
+	}
+
+	if (sqlite3_prepare(db, sql_insert, -1, &stmt, NULL) != SQLITE_OK)
+		goto sqlite_err;
+
+	/* Create a new uuid first. */
+	paste->uuid = estrdup(create_id());
+
+	sqlite3_bind_text(stmt, 1, paste->uuid, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 2, paste->title, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 3, paste->author, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 4, paste->language, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 5, paste->code, -1, SQLITE_STATIC);
+	sqlite3_bind_int(stmt, 6, paste->visible);
+	sqlite3_bind_int64(stmt, 7, paste->duration);
+
+	if (sqlite3_step(stmt) != SQLITE_DONE)
+		goto sqlite_err;
+
+	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+	sqlite3_finalize(stmt);
+
+	log_debug("new paste (%s) from %s expires in one %lld seconds",
+	    paste->uuid, paste->author, paste->duration);
+
+	return true;
+
+sqlite_err:
+	log_warn("database error (insert): %s", sqlite3_errmsg(db));
+	sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+
+	if (stmt)
+		sqlite3_finalize(stmt);
+
+	free(paste->uuid);
+	paste->uuid = NULL;
+
+	return false;
+}
+
+void
+database_clear(void)
+{
+	if (sqlite3_exec(db, sql_clear, NULL, NULL, NULL) != SQLITE_OK)
+		log_warn("database error (clear): %s\n", sqlite3_errmsg(db));
+}
+
+void
+database_finish(void)
+{
+	if (db)
+		sqlite3_close(db);
+}
