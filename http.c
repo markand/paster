@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <kcgi.h>
@@ -81,6 +82,213 @@ struct tmpl_paste {
 	struct paste paste;
 };
 
+static const char *tmpl_index_keywords[] = {
+	"uuid",
+	"name",
+	"author",
+	"language",
+	"expiration"
+};
+
+static const char *tmpl_paste_keywords[] = {
+	"uuid",
+	"title",
+	"author",
+	"language",
+	"code",
+	"timestamp",
+	"visible",
+	"duration"
+};
+
+static const char *tmpl_new_keywords[] = {
+	"title",        /* /fork only */
+	"author",       /* /fork only */
+	"code",         /* /fork only */
+	"languages"
+};
+
+static const char *languages[] = {
+	"1c",
+	"abnf",
+	"accesslog",
+	"actionscript",
+	"ada",
+	"apache",
+	"applescript",
+	"arduino",
+	"armasm",
+	"asciidoc",
+	"aspectj",
+	"autohotkey",
+	"autoit",
+	"avrasm",
+	"awk",
+	"axapta",
+	"bash",
+	"basic",
+	"bnf",
+	"brainfuck",
+	"cal",
+	"capnproto",
+	"ceylon",
+	"clean",
+	"clojure",
+	"clojure-repl",
+	"cmake",
+	"coffeescript",
+	"coq",
+	"cos",
+	"cpp",
+	"crmsh",
+	"crystal",
+	"cs",
+	"csp",
+	"css",
+	"dart",
+	"delphi",
+	"diff",
+	"django",
+	"d",
+	"dns",
+	"dockerfile",
+	"dos",
+	"dsconfig",
+	"dts",
+	"dust",
+	"ebnf",
+	"elixir",
+	"elm",
+	"erb",
+	"erlang",
+	"erlang-repl",
+	"excel",
+	"fix",
+	"flix",
+	"fortran",
+	"fsharp",
+	"gams",
+	"gauss",
+	"gcode",
+	"gherkin",
+	"glsl",
+	"go",
+	"golo",
+	"gradle",
+	"groovy",
+	"haml",
+	"handlebars",
+	"haskell",
+	"haxe",
+	"hsp",
+	"htmlbars",
+	"http",
+	"hy",
+	"inform7",
+	"ini",
+	"irpf90",
+	"java",
+	"javascript",
+	"jboss-cli",
+	"json",
+	"julia",
+	"julia-repl",
+	"kotlin",
+	"lasso",
+	"ldif",
+	"leaf",
+	"less",
+	"lisp",
+	"livecodeserver",
+	"livescript",
+	"llvm",
+	"lsl",
+	"lua",
+	"makefile",
+	"markdown",
+	"mathematica",
+	"matlab",
+	"maxima",
+	"mel",
+	"mercury",
+	"mipsasm",
+	"mizar",
+	"mojolicious",
+	"monkey",
+	"moonscript",
+	"n1ql",
+	"nginx",
+	"nimrod",
+	"nix",
+	"nohighlight",
+	"nsis",
+	"objectivec",
+	"ocaml",
+	"openscad",
+	"oxygene",
+	"parser3",
+	"perl",
+	"pf",
+	"php",
+	"pony",
+	"powershell",
+	"processing",
+	"profile",
+	"prolog",
+	"protobuf",
+	"puppet",
+	"purebasic",
+	"python",
+	"q",
+	"qml",
+	"rib",
+	"r",
+	"roboconf",
+	"routeros",
+	"rsl",
+	"ruby",
+	"ruleslanguage",
+	"rust",
+	"scala",
+	"scheme",
+	"scilab",
+	"scss",
+	"shell",
+	"smali",
+	"smalltalk",
+	"sml",
+	"sqf",
+	"sql",
+	"stan",
+	"stata",
+	"step21",
+	"stylus",
+	"subunit",
+	"swift",
+	"taggerscript",
+	"tap",
+	"tcl",
+	"tex",
+	"thrift",
+	"tp",
+	"twig",
+	"typescript",
+	"vala",
+	"vbnet",
+	"vbscript-html",
+	"vbscript",
+	"verilog",
+	"vhdl",
+	"vim",
+	"x86asm",
+	"xl",
+	"xml",
+	"xquery",
+	"yaml",
+	"zephir",
+	NULL
+};
+
 static const char *
 template(const char *filename)
 {
@@ -90,6 +298,34 @@ template(const char *filename)
 	snprintf(path, sizeof (path), "%s/%s", config.themedir, filename);
 
 	return path;
+}
+
+static void
+header(struct kreq *req)
+{
+	khttp_template(req, NULL, template("header.html"));
+}
+
+static void
+footer(struct kreq *req)
+{
+	khttp_template(req, NULL, template("footer.html"));
+}
+
+static long long int
+duration(const char *val)
+{
+	if (strcmp(val, "hour") == 0)
+		return PASTE_HOUR;
+	if (strcmp(val, "day") == 0)
+		return PASTE_DAY;
+	if (strcmp(val, "week") == 0)
+		return PASTE_WEEK;
+	if (strcmp(val, "month") == 0)
+		return PASTE_MONTH;
+
+	/* Default to month. */
+	return PASTE_MONTH;
 }
 
 static int
@@ -166,15 +402,8 @@ tmpl_index(size_t index, void *arg)
 {
 	/* No check, only one index. */
 	struct tmpl_index *data = arg;
-	const char *keywords[] = {
-		"uuid",
-		"name",
-		"author",
-		"language",
-		"expiration"
-	};
-	struct ktemplate kt = {
-		.key    = keywords,
+	const struct ktemplate kt = {
+		.key    = tmpl_index_keywords,
 		.keysz  = 5,
 		.arg    = data,
 		.cb     = tmpl_index_pastes
@@ -188,16 +417,36 @@ tmpl_index(size_t index, void *arg)
 	return true;
 }
 
-static void
-header(struct kreq *req)
+static int
+tmpl_new(size_t index, void *arg)
 {
-	khttp_template(req, NULL, template("header.html"));
-}
+	struct tmpl_paste *data = arg;
+	struct paste *paste = &data->paste;
 
-static void
-footer(struct kreq *req)
-{
-	khttp_template(req, NULL, template("footer.html"));
+	switch (index) {
+	case 0:
+		if (paste->title)
+			khttp_puts(data->req, paste->title);
+		break;
+	case 1:
+		if (paste->author)
+			khttp_puts(data->req, paste->author);
+		break;
+	case 2:
+		if (paste->code)
+			khttp_puts(data->req, paste->code);
+		break;
+	case 3:
+		/* TODO: fragment? */
+		for (const char **l = languages; *l != NULL; ++l)
+			khttp_puts(data->req,
+			    bprintf("<option value=\"%s\">%s</option>", *l, *l));
+		break;
+	default:
+		break;
+	};
+
+	return true;
 }
 
 static void
@@ -230,13 +479,97 @@ page_index(struct kreq *req)
 		footer(req);
 	}
 
+	for (size_t i = 0; i < data.count; ++i)
+		paste_finish(&data.pastes[i]);
+
 	khttp_free(req);
+}
+
+static void
+page_new_get(struct kreq *req)
+{
+	struct tmpl_paste data = {
+		.req    = req
+	};
+	const struct ktemplate kt = {
+		.key    = tmpl_new_keywords,
+		.keysz  = 4,
+		.cb     = tmpl_new,
+		.arg    = &data
+	};
+
+	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
+	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
+	khttp_body(req);
+	header(req);
+	khttp_template(req, &kt, template("new.html"));
+	footer(req);
+	khttp_free(req);
+}
+
+static void
+page_new_post(struct kreq *req)
+{
+	struct paste paste = {
+		.visible = true
+	};
+
+	for (size_t i = 0; i < req->fieldsz; ++i) {
+		const char *key = req->fields[i].key;
+		const char *val = req->fields[i].val;
+
+		if (strcmp(key, "title") == 0)
+			paste.title = estrdup(val);
+		else if (strcmp(key, "author") == 0)
+			paste.author = estrdup(val);
+		else if (strcmp(key, "language") == 0)
+			paste.language = estrdup(val);
+		else if (strcmp(key, "duration") == 0)
+			paste.duration = duration(val);
+		else if (strcmp(key, "code") == 0)
+			paste.code = estrdup(val);
+		else if (strcmp(key, "private") == 0)
+			paste.visible = strcmp(val, "on") != 0;
+	}
+
+	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
+
+	if (!paste.title || !paste.author || !paste.language || !paste.code) {
+		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_400]);
+		khttp_body(req);
+		header(req);
+		khttp_template(req, NULL, template("400.html"));
+		footer(req);
+	} else {
+		if (!database_insert(&paste)) {
+			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_500]);
+			khttp_body(req);
+			header(req);
+			khttp_template(req, NULL, template("500.html"));
+			footer(req);
+		} else {
+			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
+			khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
+		}
+	}
+
+	khttp_free(req);
+	paste_finish(&paste);
 }
 
 static void
 page_new(struct kreq *req)
 {
-	(void)req;
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_new_get(req);
+		break;
+	case KMETHOD_POST:
+		page_new_post(req);
+		break;
+	default:
+		break;
+	}
 }
 
 static void
@@ -259,18 +592,8 @@ page_paste(struct kreq *req)
 		khttp_body(req);
 		khttp_template(req, NULL, template("404.html"));
 	} else {
-		const char *keywords[] = {
-			"uuid",
-			"title",
-			"author",
-			"language",
-			"code",
-			"timestamp",
-			"visible",
-			"duration"
-		};
 		const struct ktemplate kt = {
-			.key    = keywords,
+			.key    = tmpl_paste_keywords,
 			.keysz  = 8,
 			.cb     = tmpl_paste,
 			.arg    = &data
@@ -281,8 +604,10 @@ page_paste(struct kreq *req)
 		header(req);
 		khttp_template(req, &kt, template("paste.html"));
 		footer(req);
-		khttp_free(req);
 	}
+
+	khttp_free(req);
+	paste_finish(&data.paste);
 }
 
 static void

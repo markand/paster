@@ -1,0 +1,40 @@
+	<h1>Create paste</h1>
+
+	<form action="/new" method="post">
+		<table>
+			<tr>
+				<td>Title</td>
+				<td><input name="title" type="text" placeholder="Untitled" value="@@title@@" /></td>
+			</tr>
+
+			<tr>
+				<td>Author</td>
+				<td><input name="author" type="text" placeholder="Anonymous" value="@@author@@" /></td>
+			</tr>
+
+			<tr>
+				<td>Language</td>
+				<td><select name="language">@@languages@@</select></td>
+			</tr>
+
+			<tr>
+				<td>Expires in</td>
+				<td>
+					<select name="duration">
+						<option value="month">one month</option>
+						<option value="week">one week</option>
+						<option value="day">one day</option>
+						<option value="hour">one hour</option>
+					</select>
+				</td>
+			</tr>
+
+			<tr>
+				<td>Private</td>
+				<td><input type="checkbox" name="private"></input></td>
+			</tr>
+		</table>
+
+		<textarea id="code" class="textarea" placeholder="What do you want to share?" rows="10" name="code">@@code@@</textarea>
+		<button>Submit</button>
+	</form>
