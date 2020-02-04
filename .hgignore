@@ -15,5 +15,9 @@
 \.DS_Store$
 
 # Temporary files.
+extern/libsqlite3.a
 \.o$
 \.d$
+
+# Executables.
+pasterd

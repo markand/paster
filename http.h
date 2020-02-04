@@ -1,5 +1,5 @@
 /*
- * pasterd.c -- main pasterd(8) file
+ * http.h -- HTTP parsing and rendering
  *
  * Copyright (c) 2020 David Demelier <markand@malikania.fr>
  * 
@@ -16,47 +16,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
+#ifndef PASTER_HTTP_H
+#define PASTER_HTTP_H
 
-#include "database.h"
-#include "http.h"
-#include "log.h"
+void
+http_fcgi_run(void);
 
-static void
-init(void)
-{
-	srand(time(NULL));
-	log_open();
-	database_open("test.db");
-}
+void
+http_cgi_run(void);
 
-static void
-quit(void)
-{
-	database_finish();
-	log_finish();
-}
- 
-int
-main(int argc, char **argv)
-{
-	init();
-
-	int opt;
-	void (*run)(void) = &(http_cgi_run);
-
-	while ((opt = getopt(argc, argv, "f")) != -1) {
-		switch (opt) {
-		case 'f':
-			run = &(http_fcgi_run);
-			break;
-		default:
-			break;
-		}
-	}
-
-	run();
-	quit();
-}
+#endif /* !PASTER_HTTP_H */

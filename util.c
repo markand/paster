@@ -19,10 +19,10 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "util.h"
 
@@ -50,4 +50,17 @@ estrdup(const char *str)
 		die(strerror(errno));
 
 	return strcpy(ret, str);
+}
+
+const char *
+bprintf(const char *fmt, ...)
+{
+	static char buf[BUFSIZ];
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof (buf), fmt, ap);
+	va_end(ap);
+
+	return buf;
 }

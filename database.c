@@ -10,9 +10,6 @@
 #include "paste.h"
 #include "util.h"
 
-/* sqlite3 use const unsigned char *. */
-#define DUP(s) estrdup((const char *)(s))
-
 static sqlite3 *db;
 
 static const char *sql_init =
@@ -41,7 +38,7 @@ static const char *sql_get =
 	"     , visible\n"
 	"     , duration\n"
 	"  FROM paste\n"
-	" WHERE id = ?";
+	" WHERE uuid = ?";
 
 static const char *sql_insert =
 	"INSERT INTO paste(\n"
@@ -76,6 +73,13 @@ static const char *sql_clear =
 	"\n"
 	"END TRANSACTION";
 
+/* sqlite3 use const unsigned char *. */
+static char *
+dup(const unsigned char *s)
+{
+	return estrdup(s ? (const char *)(s) : "");
+}
+
 static const char *
 create_id(void)
 {
@@ -100,11 +104,11 @@ create_id(void)
 static void
 convert(sqlite3_stmt *stmt, struct paste *paste)
 {
-	paste->uuid = DUP(sqlite3_column_text(stmt, 0));
-	paste->title = DUP(sqlite3_column_text(stmt, 1));
-	paste->author = DUP(sqlite3_column_text(stmt, 2));
-	paste->language = DUP(sqlite3_column_text(stmt, 3));
-	paste->code = DUP(sqlite3_column_text(stmt, 4));
+	paste->uuid = dup(sqlite3_column_text(stmt, 0));
+	paste->title = dup(sqlite3_column_text(stmt, 1));
+	paste->author = dup(sqlite3_column_text(stmt, 2));
+	paste->language = dup(sqlite3_column_text(stmt, 3));
+	paste->code = dup(sqlite3_column_text(stmt, 4));
 	paste->timestamp = sqlite3_column_int64(stmt, 5);
 	paste->visible = sqlite3_column_int(stmt, 6);
 	paste->duration = sqlite3_column_int64(stmt, 7);

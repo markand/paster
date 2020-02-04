@@ -19,12 +19,15 @@
 #ifndef PASTER_UTIL_H
 #define PASTER_UTIL_H
 
-#include <noreturn.h>
+#include <stdnoreturn.h>
 
 noreturn void
-die(const char *fmt, ...);
+die(const char *, ...);
 
 char *
-estrdup(const char *str);
+estrdup(const char *);
+
+const char *
+bprintf(const char *, ...);
 
 #endif /* !PASTER_UTIL_H */

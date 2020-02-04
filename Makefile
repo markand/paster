@@ -19,12 +19,12 @@
 .POSIX:
 
 CC=             cc
-CFLAGS=         -std=c18 -Wall -Wextra -pedantic -D_XOPEN_SOURCE=700 -g
+CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -g
 # Release
 # CFLAGS=         -std=c18 -Wall -Wextra -pedantic -O3 -DNDEBUG -D_XOPEN_SOURCE=700
 LDFLAGS=        -static -lkcgi -lz
 
-SRCS=           database.c log.c pasterd.c paste.c util.c
+SRCS=           config.c database.c http.c log.c pasterd.c paste.c util.c
 OBJS=           ${SRCS:.c=.o}
 DEPS=           ${SRCS:.c=.d}
 
@@ -33,17 +33,22 @@ SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
                 -DSQLITE_OMIT_DEPRECATED \
                 -DSQLITE_DEFAULT_FOREIGN_KEYS=1
 
-UID=            www
+PREFIX=         /usr/local
+BINDIR=         ${PREFIX}/bin
+SHAREDIR=       ${PREFIX}/share
+VARDIR=         ${PREFIX}/var
+
+DEFINES=        -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\"
 
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-all: paster
+all: pasterd
 
 -include ${DEPS}
 
 .c.o:
-	${CC} ${CFLAGS} -MMD -Iextern -c $<
+	${CC} ${CFLAGS} ${DEFINES} -MMD -Iextern -c $<
 
 extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
 	${CC} ${CFLAGS} ${SQLITE_FLAGS} -MMD -c $< -o $@
@@ -58,7 +63,10 @@ clean:
 	rm -f extern/sqlite3.o extern/libsqlite3.a
 	rm -f pasterd ${OBJS} ${DEPS}
 
-run: pasterd
-	kfcgi -dv -s ./paster.sock -u ${UID} -U ${UID} -p . -- pasterd -f
+install:
+	mkdir -p ${DESTDIR}${BINDIR}
+	cp pasterd ${DESTDIR}${BINDIR}
+	mkdir -p ${DESTDIR}${SHAREDIR}/paster
+	cp -R themes ${DESTDIR}${SHAREDIR}/paster
 
 .PHONY: all clean run
