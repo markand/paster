@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <string.h>
+#include <time.h>
 
 #include "util.h"
 
@@ -61,6 +62,16 @@ bprintf(const char *fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof (buf), fmt, ap);
 	va_end(ap);
+
+	return buf;
+}
+
+const char *
+bstrftime(const char *fmt, const struct tm *tm)
+{
+	static char buf[BUFSIZ];
+
+	strftime(buf, sizeof (buf), fmt, tm);
 
 	return buf;
 }

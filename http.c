@@ -39,7 +39,6 @@ static void page_index(struct kreq *);
 static void page_new(struct kreq *);
 static void page_fork(struct kreq *);
 static void page_paste(struct kreq *);
-static void page_about(struct kreq *);
 static void page_download(struct kreq *);
 
 enum page {
@@ -47,7 +46,6 @@ enum page {
 	PAGE_NEW,
 	PAGE_FORK,
 	PAGE_PASTE,
-	PAGE_ABOUT,
 	PAGE_DOWNLOAD,
 	PAGE_LAST       /* Not used. */
 };
@@ -57,7 +55,6 @@ static const char *pages[] = {
 	[PAGE_NEW]      = "new",
 	[PAGE_FORK]     = "fork",
 	[PAGE_PASTE]    = "paste",
-	[PAGE_ABOUT]    = "about",
 	[PAGE_DOWNLOAD] = "download",
 };
 
@@ -66,7 +63,6 @@ static void (*handlers[])(struct kreq *req) = {
 	[PAGE_NEW]      = page_new,
 	[PAGE_FORK]     = page_fork,
 	[PAGE_PASTE]    = page_paste,
-	[PAGE_ABOUT]    = page_about,
 	[PAGE_DOWNLOAD] = page_download
 };
 
@@ -91,7 +87,8 @@ static const char *tmpl_index_pastes_keywords[] = {
 	"name",
 	"author",
 	"language",
-	"expiration"
+	"expiration",
+	"date"
 };
 
 static const char *tmpl_paste_keywords[] = {
@@ -113,6 +110,7 @@ static const char *tmpl_new_keywords[] = {
 };
 
 static const char *languages[] = {
+	"nohighlight"
 	"1c",
 	"abnf",
 	"accesslog",
@@ -224,7 +222,6 @@ static const char *languages[] = {
 	"nginx",
 	"nimrod",
 	"nix",
-	"nohighlight",
 	"nsis",
 	"objectivec",
 	"ocaml",
@@ -343,8 +340,7 @@ tmpl_paste(size_t index, void *arg)
 		khttp_puts(data->req, paste->code);
 		break;
 	case 5:
-		/* TODO: timestamp here. */
-		khttp_puts(data->req, "TODO");
+		khttp_puts(data->req, bstrftime("%c", localtime(&paste->timestamp)));
 		break;
 	case 6:
 		khttp_puts(data->req, bprintf("%s", paste->visible ? "Yes" : "No"));
@@ -382,6 +378,9 @@ tmpl_index_pastes(size_t index, void *arg)
 	case 4:
 		khttp_puts(data->req, bprintf("%d", paste->duration));
 		break;
+	case 5:
+		khttp_puts(data->req, bstrftime("%c", localtime(&paste->timestamp)));
+		break;
 	default:
 		break;
 	}
@@ -396,7 +395,7 @@ tmpl_index(size_t index, void *arg)
 	struct tmpl_index *data = arg;
 	const struct ktemplate kt = {
 		.key    = tmpl_index_pastes_keywords,
-		.keysz  = 5,
+		.keysz  = 6,
 		.arg    = data,
 		.cb     = tmpl_index_pastes
 	};
@@ -466,7 +465,7 @@ page(struct kreq *req, const struct ktemplate *tmpl, enum khttp status, const ch
 }
 
 static void
-page_index(struct kreq *req)
+page_index_get(struct kreq *req)
 {
 	struct tmpl_index data = {
 		.req    = req,
@@ -488,6 +487,19 @@ page_index(struct kreq *req)
 
 	for (size_t i = 0; i < data.count; ++i)
 		paste_finish(&data.pastes[i]);
+}
+
+static void
+page_index(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_index_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
 }
 
 static void
@@ -564,13 +576,42 @@ page_new(struct kreq *req)
 }
 
 static void
-page_fork(struct kreq *req)
+page_fork_get(struct kreq *req)
 {
-	(void)req;
+	struct tmpl_paste data = {
+		.req = req
+	};
+
+	if (!database_get(&data.paste, req->path))
+		page(req, NULL, KHTTP_404, "404.html");
+	else {
+		const struct ktemplate kt = {
+			.key    = tmpl_new_keywords,
+			.keysz  = 4,
+			.cb     = tmpl_new,
+			.arg    = &data
+		};
+
+		page(req, &kt, KHTTP_200, "new.html");
+		paste_finish(&data.paste);
+	}
 }
 
 static void
-page_paste(struct kreq *req)
+page_fork(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_fork_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
+}
+
+static void
+page_paste_get(struct kreq *req)
 {
 	struct tmpl_paste data = {
 		.req = req
@@ -592,17 +633,21 @@ page_paste(struct kreq *req)
 }
 
 static void
-page_about(struct kreq *req)
+page_paste(struct kreq *req)
 {
-	(void)req;
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_paste_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
 }
 
 static void
-page_download(struct kreq *req)
+page_download_get(struct kreq *req)
 {
-	if (req->method != KMETHOD_GET)
-		return;
-
 	struct paste paste;
 
 	if (!database_get(&paste, req->path))
@@ -620,6 +665,19 @@ page_download(struct kreq *req)
 		khttp_puts(req, paste.code);
 		khttp_free(req);
 		paste_finish(&paste);
+	}
+}
+
+static void
+page_download(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_download_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
 	}
 }
 

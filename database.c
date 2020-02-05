@@ -62,7 +62,7 @@ static const char *sql_recents =
 	"     , duration\n"
 	"  FROM paste\n"
 	" WHERE visible = 1\n"
-	" ORDER BY date\n"
+	" ORDER BY date DESC\n"
 	" LIMIT ?\n";
 
 static const char *sql_clear =

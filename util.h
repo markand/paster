@@ -21,6 +21,8 @@
 
 #include <stdnoreturn.h>
 
+struct tm;
+
 noreturn void
 die(const char *, ...);
 
@@ -29,5 +31,8 @@ estrdup(const char *);
 
 const char *
 bprintf(const char *, ...);
+
+const char *
+bstrftime(const char *, const struct tm *);
 
 #endif /* !PASTER_UTIL_H */
