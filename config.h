@@ -23,6 +23,7 @@
 
 extern struct config {
 	char themedir[PATH_MAX];
+	char databasepath[PATH_MAX];
 	int verbosity;
 } config;
 

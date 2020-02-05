@@ -16,20 +16,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <stdnoreturn.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "database.h"
 #include "http.h"
 #include "log.h"
+#include "util.h"
 
 static void
 init(void)
 {
 	srand(time(NULL));
 	log_open();
-	database_open("test.db");
+
+	if (!config.databasepath[0])
+		die("abort: no database specified\n");
+	if (!database_open(config.databasepath))
+		die("abort: could not open database\n");
 }
 
 static void
@@ -38,25 +46,45 @@ quit(void)
 	database_finish();
 	log_finish();
 }
+
+static noreturn void
+usage(void)
+{
+	fprintf(stderr, "usage: paster [-f] [-d database-path] [-t theme-directory]\n");
+	exit(1);
+}
  
 int
 main(int argc, char **argv)
 {
-	init();
-
+	const char *value;
 	int opt;
 	void (*run)(void) = &(http_cgi_run);
 
-	while ((opt = getopt(argc, argv, "f")) != -1) {
+	/* Seek environment variables before options. */
+	if ((value = getenv("PASTERD_DATABASE_PATH")))
+		snprintf(config.databasepath, sizeof (config.databasepath), "%s", value);
+	if ((value = getenv("PASTERD_THEME_DIR")))
+		snprintf(config.themedir, sizeof (config.themedir), "%s", value);
+
+	while ((opt = getopt(argc, argv, "d:ft:")) != -1) {
 		switch (opt) {
+		case 'd':
+			snprintf(config.databasepath, sizeof (config.databasepath), "%s", optarg);
+			break;
+		case 't':
+			snprintf(config.themedir, sizeof (config.themedir), "%s", optarg);
+			break;
 		case 'f':
 			run = &(http_fcgi_run);
 			break;
 		default:
+			usage();
 			break;
 		}
 	}
 
+	init();
 	run();
 	quit();
 }

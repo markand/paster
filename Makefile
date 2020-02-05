@@ -22,7 +22,7 @@ CC=             cc
 CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -g
 # Release
 # CFLAGS=         -std=c18 -Wall -Wextra -pedantic -O3 -DNDEBUG -D_XOPEN_SOURCE=700
-LDFLAGS=        -static -lkcgi -lz
+LDFLAGS=        -lkcgi -lz
 
 SRCS=           config.c database.c http.c log.c pasterd.c paste.c util.c
 OBJS=           ${SRCS:.c=.o}
