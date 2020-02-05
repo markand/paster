@@ -21,3 +21,4 @@ extern/libsqlite3.a
 
 # Executables.
 pasterd
+paster

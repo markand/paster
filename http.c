@@ -110,7 +110,7 @@ static const char *tmpl_new_keywords[] = {
 };
 
 static const char *languages[] = {
-	"nohighlight"
+	"nohighlight",
 	"1c",
 	"abnf",
 	"accesslog",

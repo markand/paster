@@ -43,7 +43,7 @@ DEFINES=        -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\"
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-all: pasterd
+all: pasterd paster
 
 -include ${DEPS}
 
@@ -59,13 +59,18 @@ extern/libsqlite3.a: extern/sqlite3.o
 pasterd: ${OBJS} extern/libsqlite3.a
 	${CC} -o $@ ${OBJS} ${LDFLAGS} extern/libsqlite3.a
 
+paster: paster.sh
+	cp paster.sh paster
+	chmod +x paster
+
 clean:
 	rm -f extern/sqlite3.o extern/libsqlite3.a
-	rm -f pasterd ${OBJS} ${DEPS}
+	rm -f pasterd paster ${OBJS} ${DEPS}
 
 install:
 	mkdir -p ${DESTDIR}${BINDIR}
 	cp pasterd ${DESTDIR}${BINDIR}
+	cp paster ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${SHAREDIR}/paster
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
 
