@@ -25,7 +25,7 @@
 #define PASTE_HOUR      3600          /*!< Seconds in one hour. */
 #define PASTE_DAY       86400         /*!< Seconds in one day. */
 #define PASTE_WEEK      604800        /*!< Seconds in one week. */
-#define PASTE_MONTH     18144400      /*!< Rounded to 30 days. */
+#define PASTE_MONTH     2592000       /*!< Rounded to 30 days. */
 
 /**
  * \brief Paste structure.

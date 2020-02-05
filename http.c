@@ -107,7 +107,8 @@ static const char *tmpl_new_keywords[] = {
 	"author",       /* /fork only */
 	"code",         /* /fork only */
 	"private",      /* /fork only */
-	"languages"
+	"languages",
+	"durations"
 };
 
 static const char *languages[] = {
@@ -291,6 +292,17 @@ static const char *languages[] = {
 	NULL
 };
 
+static const struct {
+	const char *title;
+	long long int secs;
+} durations[] = {
+	{ "month",      PASTE_MONTH     },
+	{ "week",       PASTE_WEEK      },
+	{ "day",        PASTE_DAY       },
+	{ "hour",       PASTE_HOUR      },
+	{ NULL,         -1              }
+};
+
 static const char *
 template(const char *filename)
 {
@@ -318,6 +330,21 @@ duration(const char *val)
 	return PASTE_MONTH;
 }
 
+static const char *
+ttl(time_t timestamp, long long int duration)
+{
+	const time_t now = time(NULL);
+	const long long int left = duration - difftime(now, timestamp);
+
+	if (left < PASTE_HOUR)
+		return bprintf("%lld minute(s)", left / 60);
+	if (left < PASTE_DAY)
+		return bprintf("%lld hour(s)", left / 3600);
+
+	/* Other in days. */
+	return bprintf("%lld day(s)", left / 86400);
+}
+
 static void
 render_languages(struct kreq *req, const struct paste *paste)
 {
@@ -328,6 +355,23 @@ render_languages(struct kreq *req, const struct paste *paste)
 			line = bprintf("<option value=\"%s\" selected>%s</option>", *l, *l);
 		else
 			line = bprintf("<option value=\"%s\">%s</option>", *l, *l);
+
+		khttp_puts(req, line);
+	}
+}
+
+static void
+render_durations(struct kreq *req, const struct paste *paste)
+{
+	for (size_t i = 0; durations[i].title != NULL; ++i) {
+		const char *line;
+
+		if (paste->duration == durations[i].secs)
+			line = bprintf("<option value=\"%s\" selected>%s</option>",
+			    durations[i].title, durations[i].title);
+		else
+			line = bprintf("<option value=\"%s\">%s</option>",
+			    durations[i].title, durations[i].title);
 
 		khttp_puts(req, line);
 	}
@@ -362,8 +406,7 @@ tmpl_paste(size_t index, void *arg)
 		khttp_puts(data->req, bprintf("%s", paste->visible ? "Yes" : "No"));
 		break;
 	case 7:
-		/* TODO: convert time left. */
-		khttp_puts(data->req, "TODO");
+		khttp_puts(data->req, ttl(paste->timestamp, paste->duration));
 		break;
 	default:
 		break;
@@ -392,7 +435,7 @@ tmpl_index_pastes(size_t index, void *arg)
 		khttp_puts(data->req, paste->language);
 		break;
 	case 4:
-		khttp_puts(data->req, bprintf("%d", paste->duration));
+		khttp_puts(data->req, ttl(paste->timestamp, paste->duration));
 		break;
 	case 5:
 		khttp_puts(data->req, bstrftime("%c", localtime(&paste->timestamp)));
@@ -450,6 +493,9 @@ tmpl_new(size_t index, void *arg)
 		break;
 	case 4:
 		render_languages(data->req, paste);
+		break;
+	case 5:
+		render_durations(data->req, paste);
 		break;
 	default:
 		break;
@@ -528,7 +574,7 @@ page_new_get(struct kreq *req)
 	};
 	const struct ktemplate kt = {
 		.key    = tmpl_new_keywords,
-		.keysz  = 5,
+		.keysz  = 6,
 		.cb     = tmpl_new,
 		.arg    = &data
 	};
@@ -605,7 +651,7 @@ page_fork_get(struct kreq *req)
 	else {
 		const struct ktemplate kt = {
 			.key    = tmpl_new_keywords,
-			.keysz  = 5,
+			.keysz  = 6,
 			.cb     = tmpl_new,
 			.arg    = &data
 		};
