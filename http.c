@@ -301,15 +301,26 @@ template(const char *filename)
 }
 
 static void
-header(struct kreq *req)
+page_header(struct kreq *req)
 {
 	khttp_template(req, NULL, template("header.html"));
 }
 
 static void
-footer(struct kreq *req)
+page_footer(struct kreq *req)
 {
 	khttp_template(req, NULL, template("footer.html"));
+}
+
+static void
+page_error(struct kreq *req, int httpcode, const char *filename)
+{
+	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[httpcode]);
+	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
+	khttp_body(req);
+	page_header(req);
+	khttp_template(req, NULL, template(filename));
+	page_footer(req);
 }
 
 static long long int
@@ -474,9 +485,9 @@ page_index(struct kreq *req)
 
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 		khttp_body(req);
-		header(req);
+		page_header(req);
 		khttp_template(req, &kt, template("index.html"));
-		footer(req);
+		page_footer(req);
 	}
 
 	for (size_t i = 0; i < data.count; ++i)
@@ -501,9 +512,9 @@ page_new_get(struct kreq *req)
 	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
 	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 	khttp_body(req);
-	header(req);
+	page_header(req);
 	khttp_template(req, &kt, template("new.html"));
-	footer(req);
+	page_footer(req);
 	khttp_free(req);
 }
 
@@ -537,16 +548,16 @@ page_new_post(struct kreq *req)
 	if (!paste.title || !paste.author || !paste.language || !paste.code) {
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_400]);
 		khttp_body(req);
-		header(req);
+		page_header(req);
 		khttp_template(req, NULL, template("400.html"));
-		footer(req);
+		page_footer(req);
 	} else {
 		if (!database_insert(&paste)) {
 			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_500]);
 			khttp_body(req);
-			header(req);
+			page_header(req);
 			khttp_template(req, NULL, template("500.html"));
-			footer(req);
+			page_footer(req);
 		} else {
 			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
 			khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
@@ -601,9 +612,9 @@ page_paste(struct kreq *req)
 
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 		khttp_body(req);
-		header(req);
+		page_header(req);
 		khttp_template(req, &kt, template("paste.html"));
-		footer(req);
+		page_footer(req);
 	}
 
 	khttp_free(req);
@@ -619,7 +630,28 @@ page_about(struct kreq *req)
 static void
 page_download(struct kreq *req)
 {
-	(void)req;
+	if (req->method != KMETHOD_GET)
+		return;
+
+	struct paste paste;
+
+	if (!database_get(&paste, req->path))
+		page_error(req, KHTTP_404, "404.html");
+	else {
+		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_APP_OCTET_STREAM]);
+#if 0
+		/* TODO: this seems to generated truncated files. */
+		khttp_head(req, kresps[KRESP_CONTENT_LENGTH], "%zu", strlen(paste.code));
+#endif
+		khttp_head(req, kresps[KRESP_CONNECTION], "keep-alive");
+		khttp_head(req, kresps[KRESP_CONTENT_DISPOSITION],
+		    "attachment; filename=\"%s.%s\"", paste.uuid, paste.language);
+		khttp_body(req);
+		khttp_puts(req, paste.code);
+		paste_finish(&paste);
+	}
+
+	khttp_free(req);
 }
 
 static void
