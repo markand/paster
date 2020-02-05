@@ -318,6 +318,21 @@ duration(const char *val)
 	return PASTE_MONTH;
 }
 
+static void
+render_languages(struct kreq *req, const struct paste *paste)
+{
+	for (const char **l = languages; *l != NULL; ++l) {
+		const char *line;
+
+		if (paste->language && strcmp(paste->language, *l) == 0)
+			line = bprintf("<option value=\"%s\" selected>%s</option>", *l, *l);
+		else
+			line = bprintf("<option value=\"%s\">%s</option>", *l, *l);
+
+		khttp_puts(req, line);
+	}
+}
+
 static int
 tmpl_paste(size_t index, void *arg)
 {
@@ -432,12 +447,9 @@ tmpl_new(size_t index, void *arg)
 		/* Add checked attribute to combobox. */
 		if (!paste->visible)
 			khttp_puts(data->req, "checked");
-		break;;
+		break;
 	case 4:
-		/* TODO: fragment? */
-		for (const char **l = languages; *l != NULL; ++l)
-			khttp_puts(data->req,
-			    bprintf("<option value=\"%s\">%s</option>", *l, *l));
+		render_languages(data->req, paste);
 		break;
 	default:
 		break;
