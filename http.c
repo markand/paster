@@ -2,11 +2,11 @@
  * http.c -- HTTP parsing and rendering
  *
  * Copyright (c) 2020 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -83,6 +83,10 @@ struct tmpl_paste {
 };
 
 static const char *tmpl_index_keywords[] = {
+	"pastes"
+};
+
+static const char *tmpl_index_pastes_keywords[] = {
 	"uuid",
 	"name",
 	"author",
@@ -300,29 +304,6 @@ template(const char *filename)
 	return path;
 }
 
-static void
-page_header(struct kreq *req)
-{
-	khttp_template(req, NULL, template("header.html"));
-}
-
-static void
-page_footer(struct kreq *req)
-{
-	khttp_template(req, NULL, template("footer.html"));
-}
-
-static void
-page_error(struct kreq *req, int httpcode, const char *filename)
-{
-	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[httpcode]);
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-	khttp_body(req);
-	page_header(req);
-	khttp_template(req, NULL, template(filename));
-	page_footer(req);
-}
-
 static long long int
 duration(const char *val)
 {
@@ -414,7 +395,7 @@ tmpl_index(size_t index, void *arg)
 	/* No check, only one index. */
 	struct tmpl_index *data = arg;
 	const struct ktemplate kt = {
-		.key    = tmpl_index_keywords,
+		.key    = tmpl_index_pastes_keywords,
 		.keysz  = 5,
 		.arg    = data,
 		.cb     = tmpl_index_pastes
@@ -461,6 +442,30 @@ tmpl_new(size_t index, void *arg)
 }
 
 static void
+page_header(struct kreq *req)
+{
+	khttp_template(req, NULL, template("header.html"));
+}
+
+static void
+page_footer(struct kreq *req)
+{
+	khttp_template(req, NULL, template("footer.html"));
+}
+
+static void
+page(struct kreq *req, const struct ktemplate *tmpl, enum khttp status, const char *file)
+{
+	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
+	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[status]);
+	khttp_body(req);
+	page_header(req);
+	khttp_template(req, tmpl, template(file));
+	page_footer(req);
+	khttp_free(req);
+}
+
+static void
 page_index(struct kreq *req)
 {
 	struct tmpl_index data = {
@@ -468,32 +473,21 @@ page_index(struct kreq *req)
 		.count  = 10
 	};
 
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-
-	if (!database_recents(data.pastes, &data.count)) {
-		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_500]);
-		khttp_body(req);
-		khttp_template(req, NULL, template("500.html"));
-	} else {
-		const char *keywords[] = { "pastes" };
+	if (!database_recents(data.pastes, &data.count))
+		page(req, NULL, KHTTP_500, "500.html");
+	else {
 		struct ktemplate kt = {
-			.key    = keywords,
+			.key    = tmpl_index_keywords,
 			.keysz  = 1,
 			.arg    = &data,
 			.cb     = tmpl_index
 		};
 
-		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
-		khttp_body(req);
-		page_header(req);
-		khttp_template(req, &kt, template("index.html"));
-		page_footer(req);
+		page(req, &kt, KHTTP_200, "index.html");
 	}
 
 	for (size_t i = 0; i < data.count; ++i)
 		paste_finish(&data.pastes[i]);
-
-	khttp_free(req);
 }
 
 static void
@@ -509,13 +503,7 @@ page_new_get(struct kreq *req)
 		.arg    = &data
 	};
 
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
-	khttp_body(req);
-	page_header(req);
-	khttp_template(req, &kt, template("new.html"));
-	page_footer(req);
-	khttp_free(req);
+	page(req, &kt, KHTTP_200, "new.html");
 }
 
 static void
@@ -543,28 +531,20 @@ page_new_post(struct kreq *req)
 			paste.visible = strcmp(val, "on") != 0;
 	}
 
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-
-	if (!paste.title || !paste.author || !paste.language || !paste.code) {
-		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_400]);
-		khttp_body(req);
-		page_header(req);
-		khttp_template(req, NULL, template("400.html"));
-		page_footer(req);
-	} else {
-		if (!database_insert(&paste)) {
-			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_500]);
-			khttp_body(req);
-			page_header(req);
-			khttp_template(req, NULL, template("500.html"));
-			page_footer(req);
-		} else {
+	if (!paste.title || !paste.author || !paste.language || !paste.code)
+		page(req, NULL, KHTTP_400, "400.html");
+	else {
+		if (!database_insert(&paste))
+			page(req, NULL, KHTTP_500, "500.html");
+		else {
+			/* Redirect to paste details. */
 			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
 			khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
+			khttp_body(req);
+			khttp_free(req);
 		}
 	}
 
-	khttp_free(req);
 	paste_finish(&paste);
 }
 
@@ -596,13 +576,9 @@ page_paste(struct kreq *req)
 		.req = req
 	};
 
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-
-	if (!database_get(&data.paste, req->path)) {
-		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_404]);
-		khttp_body(req);
-		khttp_template(req, NULL, template("404.html"));
-	} else {
+	if (!database_get(&data.paste, req->path))
+		page(req, NULL, KHTTP_404, "404.html");
+	else {
 		const struct ktemplate kt = {
 			.key    = tmpl_paste_keywords,
 			.keysz  = 8,
@@ -610,15 +586,9 @@ page_paste(struct kreq *req)
 			.arg    = &data
 		};
 
-		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
-		khttp_body(req);
-		page_header(req);
-		khttp_template(req, &kt, template("paste.html"));
-		page_footer(req);
+		page(req, &kt, KHTTP_200, "paste.html");
+		paste_finish(&data.paste);
 	}
-
-	khttp_free(req);
-	paste_finish(&data.paste);
 }
 
 static void
@@ -636,7 +606,7 @@ page_download(struct kreq *req)
 	struct paste paste;
 
 	if (!database_get(&paste, req->path))
-		page_error(req, KHTTP_404, "404.html");
+		page(req, NULL, KHTTP_404, "404.html");
 	else {
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_APP_OCTET_STREAM]);
 #if 0
@@ -648,10 +618,9 @@ page_download(struct kreq *req)
 		    "attachment; filename=\"%s.%s\"", paste.uuid, paste.language);
 		khttp_body(req);
 		khttp_puts(req, paste.code);
+		khttp_free(req);
 		paste_finish(&paste);
 	}
-
-	khttp_free(req);
 }
 
 static void
@@ -670,10 +639,10 @@ http_fcgi_run(void)
 
 	if (khttp_fcgi_init(&fcgi, NULL, 0, pages, PAGE_LAST, 0) != KCGI_OK)
 		return;
- 
+
 	while (khttp_fcgi_parse(fcgi, &req) == KCGI_OK)
 		process(&req);
- 
+
 	khttp_fcgi_free(fcgi);
 }
 
