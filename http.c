@@ -106,6 +106,7 @@ static const char *tmpl_new_keywords[] = {
 	"title",        /* /fork only */
 	"author",       /* /fork only */
 	"code",         /* /fork only */
+	"private",      /* /fork only */
 	"languages"
 };
 
@@ -428,6 +429,11 @@ tmpl_new(size_t index, void *arg)
 			khttp_puts(data->req, paste->code);
 		break;
 	case 3:
+		/* Add checked attribute to combobox. */
+		if (!paste->visible)
+			khttp_puts(data->req, "checked");
+		break;;
+	case 4:
 		/* TODO: fragment? */
 		for (const char **l = languages; *l != NULL; ++l)
 			khttp_puts(data->req,
@@ -510,7 +516,7 @@ page_new_get(struct kreq *req)
 	};
 	const struct ktemplate kt = {
 		.key    = tmpl_new_keywords,
-		.keysz  = 4,
+		.keysz  = 5,
 		.cb     = tmpl_new,
 		.arg    = &data
 	};
@@ -587,7 +593,7 @@ page_fork_get(struct kreq *req)
 	else {
 		const struct ktemplate kt = {
 			.key    = tmpl_new_keywords,
-			.keysz  = 4,
+			.keysz  = 5,
 			.cb     = tmpl_new,
 			.arg    = &data
 		};
