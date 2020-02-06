@@ -67,7 +67,7 @@ extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
 	${CC} ${MY_CFLAGS} ${SQLITE_FLAGS} -c $< -o $@
 
 extern/libsqlite3.a: extern/sqlite3.o
-	${AR} -rc $@ $<
+	${AR} -rc $@ extern/sqlite3.o
 
 pasterd: ${CORE_OBJS} extern/libsqlite3.a pasterd.o pasterd.8
 	${CC} -o $@ ${CORE_OBJS} pasterd.o ${MY_LDFLAGS} extern/libsqlite3.a
