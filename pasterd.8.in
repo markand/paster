@@ -1,0 +1,178 @@
+.\"
+.\" Copyright (c) 2020 David Demelier <markand@malikania.fr>
+.\"
+.\" Permission to use, copy, modify, and/or distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd 06 February, 2020
+.Dt PASTERD 8
+.Os
+.\" NAME
+.Sh NAME
+.Nm pasterd
+.Nd simple paste service
+.\" SYNOPSIS
+.Sh SYNOPSIS
+.Nm
+.Op Fl f
+.Op Fl d Ar database-path
+.Op Fl t Ar theme-directory
+.\" DESCRIPTION
+.Sh DESCRIPTION
+The
+.Nm
+utility is a simple CGI or FastCGI program to host code snippets over a web
+interface. It will show most recent public pastes and let users to create new
+one from a web form.
+.Pp
+It supports:
+.Bl -bullet -compat
+.It
+Listing of recent pastes,
+.It 
+Submission of new pastes,
+.It
+Language highlighting (depending on the theme),
+.It
+Private pastes (not listed).
+.El
+.Pp
+To store pastes,
+.Nm
+uses a SQLite database that must be writable by the CGI/FastCGI owner. See usage
+below.
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl f
+Starts as FastCGI mode,
+.Nm
+will wait forever for new requests.
+.It Fl d Ar database-path
+Specify an alternate path for the database.
+.It Fl t Ar theme-directory
+Specify an alternate directory for the theme.
+.El
+.\" USAGE
+.Sh USAGE
+The
+.Nm
+utility does not use configuration file as it does not need many adjustments,
+instead every parameter could be passed by environment variables or options.
+.Pp
+By default,
+.Nm
+will try to use
+.Pa @VARDIR@/paster/paster.db
+database.
+.\" USING WITH FASTCGI
+.Sh USING WITH FASTCGI
+The recommended way to use
+.Nm
+is to deploy using FastCGI. You can use the
+.Xr kfcgi 8
+helper to spawn the process for you.
+.Pp
+Example:
+.Bd -literal -offset Ds
+kfcgi -p /var/www/paster -- pasterd -f -d paster.db -t siimple
+.Ed
+.Pp
+Note: kfcgi chroot to the directory given, you must either statically link
+pasterd at build time or deploy all required libraries. Also, themes directory
+will need to be available in the chroot directory. In the above example, this
+will effectively create a database
+.Pa /var/www/paster/paster.db
+and use the theme
+.Pa /var/www/paster/siimple .
+.Pp
+Then, simply copy the desired theme into the directory.
+.Bd -literal -offset Ds
+cp -R @SHAREDIR@/paster/themes/siimple /var/www/paster
+.Ed
+.Pp
+As an
+.Em insecure
+alternative, you can chroot to
+.Pa /
+to avoid static-linking and copying themes, using:
+.Bd -literal -offset Ds
+kfcgi -p / -- pasterd -f \e
+	-d /var/www/paster/paster.db \e
+	-t @SHAREDIR@/paster/themes/siimple
+.Ed
+.Pp
+Both kfcgi invocations will create
+.Pa /var/www/run/http.sock
+with current user and group. Configure the web server to talk to that socket
+and make sure it has appropriate file permissions otherwise see
+.Fl u
+option in
+.Nm kfcgi .
+See also the
+.Xr kfcgi 8
+manual for more information.
+.Pp
+Next, configure the web server.
+.Pp
+Warning: at this moment,
+.Nm
+requires its own virtual host and can
+.Em not
+use a url.
+.\" Server: nginx
+.Ss Server: nginx
+The nginx web server requires several parameters to run
+.Nm .
+.Bd -literal
+server {
+	server_name mypaste.fr;
+	listen 80;
+
+	location / {
+		fastcgi_param QUERY_STRING      query_string;
+		fastcgi_param REQUEST_METHOD    $request_method;
+		fastcgi_param CONTENT_TYPE      $content_type;
+		fastcgi_param CONTENT_LENGTH    $content_length;
+		fastcgi_param SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+		fastcgi_param SCRIPT_NAME       $fastcgi_script_name;
+		fastcgi_param PATH_INFO         $document_uri;
+		fastcgi_param PATH_TRANSLATED   $document_root$fastcgi_path_info;
+		fastcgi_param REQUEST_URI       $request_uri;
+		fastcgi_param DOCUMENT_URI      $document_uri;
+		fastcgi_param DOCUMENT_ROOT     $document_root;
+		fastcgi_param SERVER_PROTOCOL   $server_protocol;
+		fastcgi_param GATEWAY_INTERFACE CGI/1.1;
+		fastcgi_param SERVER_SOFTWARE   nginx/$nginx_version;
+		fastcgi_param REMOTE_ADDR       $remote_addr;
+		fastcgi_param REMOTE_PORT       $remote_port;
+		fastcgi_param SERVER_ADDR       $server_addr;
+		fastcgi_param SERVER_PORT       $server_port;
+		fastcgi_param SERVER_NAME       $server_name;
+		fastcgi_param HTTPS             $https;
+		fastcgi_pass unix:/var/www/run/httpd.sock;
+	}
+}
+.Ed
+.\" ENVIRONMENT
+.Sh ENVIRONMENT
+The following environment variables are detected:
+.Bl -tag -width Ds
+.It Va PASTERD_DATABASE_PATH No (string)
+Path to the SQLite database.
+.It Va PASTERD_THEME_DIR No (string)
+Directory containing the theme.
+.El
+.\" SEE ALSO
+.Sh SEE ALSO
+.Xr paster 8 ,
+.Xr kfcgi 8

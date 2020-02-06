@@ -34,12 +34,13 @@ SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
 PREFIX=         /usr/local
 BINDIR=         ${PREFIX}/bin
 SHAREDIR=       ${PREFIX}/share
+MANDIR=         ${PREFIX}/share/man
 VARDIR=         ${PREFIX}/var
 
 DEFINES=        -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\"
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .o .in
 
 all: pasterd paster
 
@@ -48,16 +49,21 @@ all: pasterd paster
 .c.o:
 	${CC} ${CFLAGS} ${DEFINES} -MMD -Iextern -c $<
 
+.in:
+	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
+	    -e "s|@VARDIR@|${VARDIR}|" \
+	    < $< > $@
+
 extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
 	${CC} ${CFLAGS} ${SQLITE_FLAGS} -MMD -c $< -o $@
 
 extern/libsqlite3.a: extern/sqlite3.o
 	${AR} -rc $@ $<
 
-pasterd: ${OBJS} extern/libsqlite3.a
+pasterd: ${OBJS} extern/libsqlite3.a paster.8
 	${CC} -o $@ ${OBJS} ${LDFLAGS} extern/libsqlite3.a
 
-paster: paster.sh
+paster: paster.sh paster.1
 	cp paster.sh paster
 	chmod +x paster
 
@@ -68,12 +74,14 @@ clean:
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
 	cp paster ${DESTDIR}${BINDIR}
+	cp paster.1 ${DESTDIR}${MANDIR}/man1/paster.1
 	
 install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
 	cp pasterd ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${SHAREDIR}/paster
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
+	cp pasterd.8 ${DESTDIR}${MANDIR}/man8/pasterd.8
 
 install: install-pasterd install-paster
 

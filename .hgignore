@@ -20,5 +20,5 @@ extern/libsqlite3.a
 \.d$
 
 # Executables.
-pasterd
-paster
+^pasterd(\.8)?$
+^paster(\.1)?$

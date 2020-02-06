@@ -1,0 +1,91 @@
+.\"
+.\" Copyright (c) 2020 David Demelier <markand@malikania.fr>
+.\"
+.\" Permission to use, copy, modify, and/or distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd 06 February, 2020
+.Dt PASTER 1
+.Os
+.\" NAME
+.Sh NAME
+.Nm paster
+.Nd simple paste service client
+.\" SYNOPSIS
+.Sh SYNOPSIS
+.Nm
+.Op Fl LDvx
+.Op Fl a Ar author
+.Op Fl l Ar language
+.Op Fl d Ar duration
+.Op Fl t Ar title
+.Ar filename
+.Ar host
+.\" DESCRIPTION
+.Sh DESCRIPTION
+The
+.Nm
+tool is the convenient brother to
+.Nm pasterd ,
+it will paste some content into an instance.
+.Pp
+The
+.Ar filename
+argument can points to a file whose content will be pasted, if it is set to
+.Dq -
+then standard input is read instead.
+.Pp
+The
+.Ar host
+argument is a URL where a
+.Nm pasterd
+instance is running.
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl L
+List all supported languages.
+.It Fl D
+List all supported durations.
+.It Fl v
+Be more verbose.
+.It Fl x
+Store the paste as private.
+.It Fl a Ar author
+Sets the author, defaults to
+.Dq Anonymous .
+.It Fl l Ar language
+Sets the code snippet language, defaults to
+.Dq "nohighlight" .
+.It Fl d Ar duration
+Sets the paste lifetime, defaults to
+.Dq "month" .
+.It Fl t Ar title
+Sets a title to the paste, defaults to
+.Dq "Untitled" .
+.\" EXAMPLES
+.Sh EXAMPLES
+.Ss Paste the main.sh script shell with a title and an author.
+.Bd -literal -offset
+paster -t "Some shell script" -a Francis -l shell main.sh http://example.org
+.Ed
+.Ss Read standard input and paste it.
+.Bd -literal -offset
+grep error logs.txt | paster - http://example.org
+.Ed
+.Ss Paste a non-listed file with a short duration.
+.Bd -literal -offset
+paste -x -d hour private.txt http://example.org
+.Ed
+.\" SEE ALSO
+.Sh SEE ALSO
+.Xr pasterd 8
