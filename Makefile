@@ -72,7 +72,10 @@ paster: paster.sh paster.1
 
 clean:
 	rm -f extern/sqlite3.o extern/libsqlite3.a
-	rm -f pasterd paster ${OBJS} ${DEPS}
+	rm -f ${OBJS} ${DEPS}
+	rm -f pasterd pasterd.d pasterd.o pasterd.8
+	rm -f pasterd-clean pasterd-clean.d pasterd-clean.o pasterd-clean.8
+	rm -f paster paster.1
 
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
