@@ -22,7 +22,7 @@ CC=             cc
 CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -DNDEBUG -O3
 LDFLAGS=        -static -lkcgi -lkcgihtml -lz
 
-SRCS=           config.c database.c http.c log.c pasterd.c paste.c util.c
+SRCS=           config.c database.c http.c log.c paste.c util.c
 OBJS=           ${SRCS:.c=.o}
 DEPS=           ${SRCS:.c=.d}
 
@@ -42,7 +42,7 @@ DEFINES=        -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\"
 .SUFFIXES:
 .SUFFIXES: .c .o .in
 
-all: pasterd paster
+all: pasterd pasterd-clean paster
 
 -include ${DEPS}
 
@@ -60,8 +60,11 @@ extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
 extern/libsqlite3.a: extern/sqlite3.o
 	${AR} -rc $@ $<
 
-pasterd: ${OBJS} extern/libsqlite3.a paster.8
-	${CC} -o $@ ${OBJS} ${LDFLAGS} extern/libsqlite3.a
+pasterd: ${OBJS} extern/libsqlite3.a pasterd.o pasterd.8
+	${CC} -o $@ ${OBJS} pasterd.o ${LDFLAGS} extern/libsqlite3.a
+
+pasterd-clean: ${OBJS} extern/libsqlite3.a pasterd-clean.o pasterd-clean.8
+	${CC} -o $@ ${OBJS} pasterd-clean.o ${LDFLAGS} extern/libsqlite3.a
 
 paster: paster.sh paster.1
 	cp paster.sh paster
@@ -73,12 +76,15 @@ clean:
 
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
+	mkdir -p ${DESTDIR}${MANDIR}/man1
 	cp paster ${DESTDIR}${BINDIR}
 	cp paster.1 ${DESTDIR}${MANDIR}/man1/paster.1
 	
 install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
+	mkdir -p ${DESTDIR}${MANDIR}/man8
 	cp pasterd ${DESTDIR}${BINDIR}
+	cp pasterd-clean ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${SHAREDIR}/paster
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
 	cp pasterd.8 ${DESTDIR}${MANDIR}/man8/pasterd.8
