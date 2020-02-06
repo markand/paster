@@ -29,6 +29,13 @@
 #include "util.h"
 
 static void
+defaults(void)
+{
+	snprintf(config.databasepath, sizeof (config.databasepath),
+	    "%s", VARDIR "/paster/paster.db");
+}
+
+static void
 init(void)
 {
 	srand(time(NULL));
@@ -60,6 +67,8 @@ main(int argc, char **argv)
 	const char *value;
 	int opt;
 	void (*run)(void) = &(http_cgi_run);
+
+	defaults();
 
 	/* Seek environment variables before options. */
 	if ((value = getenv("PASTERD_DATABASE_PATH")))

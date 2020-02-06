@@ -797,7 +797,7 @@ page_static_get(struct kreq *req)
 	else {
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[req->mime]);
-		khttp_head(req, kresps[KRESP_CONTENT_TYPE],
+		khttp_head(req, kresps[KRESP_CONTENT_LENGTH],
 		    "%llu", (unsigned long long)(st.st_size));
 		khttp_body(req);
 		khttp_template(req, NULL, path);
