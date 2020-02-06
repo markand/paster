@@ -56,6 +56,9 @@ main(int argc, char **argv)
 
 	if (!path[0])
 		die("abort: no database specified");
+	if (!database_open(path))
+		die("abort: could not open database");
 
 	database_clear();
+	database_finish();
 }
