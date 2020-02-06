@@ -57,7 +57,7 @@ quit(void)
 static noreturn void
 usage(void)
 {
-	fprintf(stderr, "usage: paster [-f] [-d database-path] [-t theme-directory]\n");
+	fprintf(stderr, "usage: paster [-fqv] [-d database-path] [-t theme-directory]\n");
 	exit(1);
 }
  
@@ -75,8 +75,10 @@ main(int argc, char **argv)
 		snprintf(config.databasepath, sizeof (config.databasepath), "%s", value);
 	if ((value = getenv("PASTERD_THEME_DIR")))
 		snprintf(config.themedir, sizeof (config.themedir), "%s", value);
+	if ((value = getenv("PASTERD_VERBOSITY")))
+		config.verbosity = atoi(value);
 
-	while ((opt = getopt(argc, argv, "d:ft:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:ft:qv")) != -1) {
 		switch (opt) {
 		case 'd':
 			snprintf(config.databasepath, sizeof (config.databasepath), "%s", optarg);
@@ -86,6 +88,12 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			run = &(http_fcgi_run);
+			break;
+		case 'v':
+			config.verbosity++;
+			break;
+		case 'q':
+			config.verbosity = 0;
 			break;
 		default:
 			usage();

@@ -138,19 +138,17 @@ database_open(const char *path)
 {
 	assert(path);
 
-	log_debug("opening database: %s\n", path);
+	log_info("database: opening %s", path);
 
 	if (sqlite3_open(path, &db) != SQLITE_OK) {
-		log_warn("unable to open %s: %s\n", path, sqlite3_errmsg(db));
+		log_warn("database: unable to open %s: %s", path, sqlite3_errmsg(db));
 		return false;
 	}
 
 	if (sqlite3_exec(db, sql_init, NULL, NULL, NULL) != SQLITE_OK) {
-		log_warn("unable to initialize %s: %s\n", path, sqlite3_errmsg(db));
+		log_warn("database: unable to initialize %s: %s", path, sqlite3_errmsg(db));
 		return false;
 	}
-
-	log_debug("successfully opened database: %s\n", path);
 
 	return true;
 }
@@ -164,6 +162,7 @@ database_recents(struct paste *pastes, size_t *max)
 	sqlite3_stmt *stmt = NULL;
 
 	memset(pastes, 0, *max * sizeof (struct paste));
+	log_debug("database: accessing most recents");
 
 	if (sqlite3_prepare(db, sql_recents, -1, &stmt, NULL) != SQLITE_OK ||
 	    sqlite3_bind_int64(stmt, 1, *max) != SQLITE_OK)
@@ -174,13 +173,15 @@ database_recents(struct paste *pastes, size_t *max)
 	for (; i < *max && sqlite3_step(stmt) == SQLITE_ROW; ++i)
 		convert(stmt, &pastes[i]);
 
+	log_debug("database: found %zu pastes", i);
 	sqlite3_finalize(stmt);
 	*max = i;
+
 
 	return true;
 
 sqlite_err:
-	log_warn("database error (recents): %s\n", sqlite3_errmsg(db));
+	log_warn("database: error (recents): %s\n", sqlite3_errmsg(db));
 
 	if (stmt)
 		sqlite3_finalize(stmt);
@@ -195,6 +196,7 @@ database_get(struct paste *paste, const char *uuid)
 	assert(uuid);
 
 	memset(paste, 0, sizeof (struct paste));
+	log_debug("database: accessing paste with uuid: %s", uuid);
 
 	sqlite3_stmt* stmt = NULL;
 
@@ -221,7 +223,7 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	log_warn("database error (get): %s", sqlite3_errmsg(db));
+	log_warn("database: error (get): %s", sqlite3_errmsg(db));
 
 	return false;
 }
@@ -232,9 +234,10 @@ database_insert(struct paste *paste)
 	assert(paste);
 
 	sqlite3_stmt* stmt = NULL;
+	log_debug("database: creating new paste");
 
 	if (sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL) != SQLITE_OK) {
-		log_warn("could not lock database: %s\n", sqlite3_errmsg(db));
+		log_warn("database: could not lock database: %s", sqlite3_errmsg(db));
 		return false;
 	}
 
@@ -258,13 +261,13 @@ database_insert(struct paste *paste)
 	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
 	sqlite3_finalize(stmt);
 
-	log_debug("new paste (%s) from %s expires in one %lld seconds",
+	log_info("database: new paste (%s) from %s expires in one %lld seconds",
 	    paste->uuid, paste->author, paste->duration);
 
 	return true;
 
 sqlite_err:
-	log_warn("database error (insert): %s", sqlite3_errmsg(db));
+	log_warn("database: error (insert): %s", sqlite3_errmsg(db));
 	sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
 
 	if (stmt)
@@ -279,13 +282,19 @@ sqlite_err:
 void
 database_clear(void)
 {
+	log_debug("database: clearing deprecated pastes");
+
 	if (sqlite3_exec(db, sql_clear, NULL, NULL, NULL) != SQLITE_OK)
-		log_warn("database error (clear): %s\n", sqlite3_errmsg(db));
+		log_warn("database: error (clear): %s\n", sqlite3_errmsg(db));
 }
 
 void
 database_finish(void)
 {
-	if (db)
+	log_debug("database: closing");
+
+	if (db) {
 		sqlite3_close(db);
+		db = NULL;
+	}
 }

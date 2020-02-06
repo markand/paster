@@ -823,6 +823,8 @@ process(struct kreq *req)
 {
 	assert(req);
 
+	log_debug("http: accessing page '%s'", req->path);
+
 	if (req->page == PAGE_LAST)
 		page(req, NULL, KHTTP_404, "404.html");
 	else

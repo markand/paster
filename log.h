@@ -22,10 +22,14 @@
 #include <stdarg.h>
 
 enum log_level {
-	LOG_LEVEL_DEBUG,
+	LOG_LEVEL_WARNING = 1,
 	LOG_LEVEL_INFO,
-	LOG_LEVEL_WARNING
+	LOG_LEVEL_DEBUG
 };
+
+#define log_debug(...)  log_write(LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define log_warn(...)   log_write(LOG_LEVEL_WARNING, __VA_ARGS__)
+#define log_info(...)   log_write(LOG_LEVEL_INFO, __VA_ARGS__)
 
 void
 log_open(void);
@@ -35,10 +39,6 @@ log_write(enum log_level level, const char *fmt, ...);
 
 void
 log_vwrite(enum log_level level, const char *fmt, va_list ap);
-
-#define log_debug(...) log_write(LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define log_warn(...) log_write(LOG_LEVEL_WARNING, __VA_ARGS__)
-#define log_info(...) log_write(LOG_LEVEL_INFO, __VA_ARGS__)
 
 void
 log_finish(void);

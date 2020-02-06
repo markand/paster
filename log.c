@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <syslog.h>
 
+#include "config.h"
 #include "log.h"
 
 static int syslog_levels[] = {
@@ -31,27 +32,30 @@ static int syslog_levels[] = {
 void
 log_open(void)
 {
-	openlog("paster", 0, LOG_USER);
+	if (config.verbosity > 0)
+		openlog("paster", 0, LOG_USER);
 }
 
 void
-log_write(enum log_level level,const char *fmt, ...)
+log_write(enum log_level level, const char *fmt, ...)
 {
-	assert(fmt);
 	assert(level >= 0 && level <= LOG_LEVEL_WARNING);
+	assert(fmt);
 
-	va_list ap;
+	if (config.verbosity >= level) {
+		va_list ap;
 
-	va_start(ap, fmt);
-	log_vwrite(level, fmt, ap);
-	va_end(ap);
+		va_start(ap, fmt);
+		log_vwrite(level, fmt, ap);
+		va_end(ap);
+	}
 }
 
 void
 log_vwrite(enum log_level level, const char *fmt, va_list ap)
 {
+	assert(level > 0 && level <= LOG_LEVEL_DEBUG);
 	assert(fmt);
-	assert(level >= 0 && level <= LOG_LEVEL_WARNING);
 
 	char line[BUFSIZ];
 
@@ -62,5 +66,6 @@ log_vwrite(enum log_level level, const char *fmt, va_list ap)
 void
 log_finish(void)
 {
-	closelog();
+	if (config.verbosity > 0)
+		closelog();
 }

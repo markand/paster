@@ -23,7 +23,7 @@
 .\" SYNOPSIS
 .Sh SYNOPSIS
 .Nm
-.Op Fl f
+.Op Fl fqv
 .Op Fl d Ar database-path
 .Op Fl t Ar theme-directory
 .\" DESCRIPTION
@@ -61,6 +61,10 @@ will wait forever for new requests.
 Specify an alternate path for the database.
 .It Fl t Ar theme-directory
 Specify an alternate directory for the theme.
+.It Fl q
+Do not log through syslog at all.
+.It Fl v
+Increase verbosity level.
 .El
 .\" USAGE
 .Sh USAGE
@@ -74,6 +78,25 @@ By default,
 will try to use
 .Pa @VARDIR@/paster/paster.db
 database.
+.\" LOGS
+.Sh LOGS
+The
+.Nm
+utility will log information through syslog unless verbosity is disabled.
+Except at startup where the tool can write to stderr some information if it
+can't continue processing, the tool will never write anything to stdout and
+use syslog only.
+.Pp
+The available verbosity level is defined in the following order:
+.Bd -literal -offset Ds
+none < warnings (default) < info < debug
+.Ed
+.Pp
+Use
+.Fl q
+or
+.Va PASTERD_VERBOSITY=0
+if you want to disable syslog completely.
 .\" USING WITH FASTCGI
 .Sh USING WITH FASTCGI
 The recommended way to use
@@ -171,6 +194,8 @@ The following environment variables are detected:
 Path to the SQLite database.
 .It Va PASTERD_THEME_DIR No (string)
 Directory containing the theme.
+.It Va PASTERD_VERBOSITY No (number)
+Verbosity level, 0 to disable completely.
 .El
 .\" SEE ALSO
 .Sh SEE ALSO

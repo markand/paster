@@ -19,5 +19,7 @@
 #include "config.h"
 
 struct config config = {
-	.themedir = SHAREDIR "/paster/themes/minimal"
+	.databasepath   = VARDIR "/paster/paster.db",
+	.themedir       = SHAREDIR "/paster/themes/minimal",
+	.verbosity      = 1
 };
