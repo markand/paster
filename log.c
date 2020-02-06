@@ -39,7 +39,7 @@ log_open(void)
 void
 log_write(enum log_level level, const char *fmt, ...)
 {
-	assert(level >= 0 && level <= LOG_LEVEL_WARNING);
+	assert(level >= LOG_LEVEL_WARNING && level <= LOG_LEVEL_DEBUG);
 	assert(fmt);
 
 	if (config.verbosity >= level) {
@@ -54,7 +54,7 @@ log_write(enum log_level level, const char *fmt, ...)
 void
 log_vwrite(enum log_level level, const char *fmt, va_list ap)
 {
-	assert(level > 0 && level <= LOG_LEVEL_DEBUG);
+	assert(level >= LOG_LEVEL_WARNING && level <= LOG_LEVEL_DEBUG);
 	assert(fmt);
 
 	char line[BUFSIZ];
