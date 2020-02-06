@@ -18,36 +18,45 @@
 
 .POSIX:
 
+# User options.
 CC=             cc
-CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -DNDEBUG -O3
-LDFLAGS=        -static -lkcgi -lkcgihtml -lz
+CFLAGS=         -DNDEBUG -O3
 
-SRCS=           config.c database.c http.c log.c paste.c util.c
-OBJS=           ${SRCS:.c=.o}
-DEPS=           ${SRCS:.c=.d}
-
-SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
-                -DSQLITE_OMIT_LOAD_EXTENSION \
-                -DSQLITE_OMIT_DEPRECATED \
-                -DSQLITE_DEFAULT_FOREIGN_KEYS=1
-
+# Installation paths.
 PREFIX=         /usr/local
 BINDIR=         ${PREFIX}/bin
 SHAREDIR=       ${PREFIX}/share
 MANDIR=         ${PREFIX}/share/man
 VARDIR=         ${PREFIX}/var
 
-DEFINES=        -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\"
+CORE_SRCS=      config.c database.c http.c log.c paste.c util.c
+CORE_OBJS=      ${CORE_SRCS:.c=.o}
+CORE_DEPS=      ${CORE_SRCS:.c=.d}
+
+SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
+                -DSQLITE_OMIT_LOAD_EXTENSION \
+                -DSQLITE_OMIT_DEPRECATED \
+                -DSQLITE_DEFAULT_FOREIGN_KEYS=1
+
+MY_CFLAGS=      -std=c18 \
+                -Iextern \
+                -D_XOPEN_SOURCE=700 \
+                -DSHAREDIR=\"${SHAREDIR}\" \
+                -DVARDIR=\"${VARDIR}\" \
+                ${CFLAGS}
+MY_LDFLAGS=     -static -lkcgi -lkcgihtml -lz ${LDFLAGS}
 
 .SUFFIXES:
 .SUFFIXES: .c .o .in
 
 all: pasterd pasterd-clean paster
 
--include ${DEPS}
+-include ${CORE_DEPS}
+-include pasterd.d
+-include pasterd-clean.d
 
 .c.o:
-	${CC} ${CFLAGS} ${DEFINES} -MMD -Iextern -c $<
+	${CC} ${MY_CFLAGS} -MMD -Iextern -c $<
 
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
@@ -55,16 +64,16 @@ all: pasterd pasterd-clean paster
 	    < $< > $@
 
 extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
-	${CC} ${CFLAGS} ${SQLITE_FLAGS} -MMD -c $< -o $@
+	${CC} ${MY_CFLAGS} ${SQLITE_FLAGS} -c $< -o $@
 
 extern/libsqlite3.a: extern/sqlite3.o
 	${AR} -rc $@ $<
 
-pasterd: ${OBJS} extern/libsqlite3.a pasterd.o pasterd.8
-	${CC} -o $@ ${OBJS} pasterd.o ${LDFLAGS} extern/libsqlite3.a
+pasterd: ${CORE_OBJS} extern/libsqlite3.a pasterd.o pasterd.8
+	${CC} -o $@ ${CORE_OBJS} pasterd.o ${MY_LDFLAGS} extern/libsqlite3.a
 
 pasterd-clean: ${OBJS} extern/libsqlite3.a pasterd-clean.o pasterd-clean.8
-	${CC} -o $@ ${OBJS} pasterd-clean.o ${LDFLAGS} extern/libsqlite3.a
+	${CC} -o $@ ${CORE_OBJS} pasterd-clean.o ${MY_LDFLAGS} extern/libsqlite3.a
 
 paster: paster.sh paster.1
 	cp paster.sh paster
@@ -72,7 +81,7 @@ paster: paster.sh paster.1
 
 clean:
 	rm -f extern/sqlite3.o extern/libsqlite3.a
-	rm -f ${OBJS} ${DEPS}
+	rm -f ${CORE_OBJS} ${CORE_DEPS}
 	rm -f pasterd pasterd.d pasterd.o pasterd.8
 	rm -f pasterd-clean pasterd-clean.d pasterd-clean.o pasterd-clean.8
 	rm -f paster paster.1
