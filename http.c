@@ -650,6 +650,10 @@ page_new_post(struct kreq *req)
 			paste.visible = strcmp(val, "on") != 0;
 	}
 
+	/* Add empty string if needed. */
+	if (!paste.code)
+		paste.code = estrdup("");
+
 	if (!database_insert(&paste))
 		page(req, NULL, KHTTP_500, "500.html");
 	else {
