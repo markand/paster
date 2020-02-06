@@ -17,7 +17,9 @@
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <assert.h>
+#include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -27,6 +29,7 @@
 #include <unistd.h>
 
 #include <kcgi.h>
+#include <kcgihtml.h>
 
 #include "config.h"
 #include "database.h"
@@ -40,6 +43,7 @@ static void page_new(struct kreq *);
 static void page_fork(struct kreq *);
 static void page_paste(struct kreq *);
 static void page_download(struct kreq *);
+static void page_static(struct kreq *);
 
 enum page {
 	PAGE_INDEX,
@@ -47,6 +51,7 @@ enum page {
 	PAGE_FORK,
 	PAGE_PASTE,
 	PAGE_DOWNLOAD,
+	PAGE_STATIC,
 	PAGE_LAST       /* Not used. */
 };
 
@@ -56,6 +61,7 @@ static const char *pages[] = {
 	[PAGE_FORK]     = "fork",
 	[PAGE_PASTE]    = "paste",
 	[PAGE_DOWNLOAD] = "download",
+	[PAGE_STATIC]   = "static"
 };
 
 static void (*handlers[])(struct kreq *req) = {
@@ -63,7 +69,8 @@ static void (*handlers[])(struct kreq *req) = {
 	[PAGE_NEW]      = page_new,
 	[PAGE_FORK]     = page_fork,
 	[PAGE_PASTE]    = page_paste,
-	[PAGE_DOWNLOAD] = page_download
+	[PAGE_DOWNLOAD] = page_download,
+	[PAGE_STATIC]   = page_static
 };
 
 struct tmpl_index {
@@ -346,6 +353,22 @@ ttl(time_t timestamp, long long int duration)
 }
 
 static void
+replace(char **dst, const char *s)
+{
+	assert(dst);
+	assert(s);
+
+	/* Trim leading spaces. */
+	while (*s && isspace(*s))
+		s++;
+
+	if (*s) {
+		free(*dst);
+		*dst = estrdup(s);
+	}
+}
+
+static void
 render_languages(struct kreq *req, const struct paste *paste)
 {
 	for (const char **l = languages; *l != NULL; ++l) {
@@ -382,35 +405,40 @@ tmpl_paste(size_t index, void *arg)
 {
 	struct tmpl_paste *data = arg;
 	struct paste *paste = &data->paste;
+	struct khtmlreq htmlreq;
+
+	khtml_open(&htmlreq, data->req, KHTML_PRETTY);
 
 	switch (index) {
 	case 0:
-		khttp_puts(data->req, paste->uuid);
+		khtml_puts(&htmlreq, paste->uuid);
 		break;
 	case 1:
-		khttp_puts(data->req, paste->title);
+		khtml_puts(&htmlreq, paste->title);
 		break;
 	case 2:
-		khttp_puts(data->req, paste->author);
+		khtml_puts(&htmlreq, paste->author);
 		break;
 	case 3:
-		khttp_puts(data->req, paste->language);
+		khtml_puts(&htmlreq, paste->language);
 		break;
 	case 4:
-		khttp_puts(data->req, paste->code);
+		khtml_puts(&htmlreq, paste->code);
 		break;
 	case 5:
-		khttp_puts(data->req, bstrftime("%c", localtime(&paste->timestamp)));
+		khtml_puts(&htmlreq, bstrftime("%c", localtime(&paste->timestamp)));
 		break;
 	case 6:
-		khttp_puts(data->req, bprintf("%s", paste->visible ? "Yes" : "No"));
+		khtml_puts(&htmlreq, bprintf("%s", paste->visible ? "Yes" : "No"));
 		break;
 	case 7:
-		khttp_puts(data->req, ttl(paste->timestamp, paste->duration));
+		khtml_puts(&htmlreq, ttl(paste->timestamp, paste->duration));
 		break;
 	default:
 		break;
 	}
+
+	khtml_close(&htmlreq);
 
 	return true;
 }
@@ -420,29 +448,34 @@ tmpl_index_pastes(size_t index, void *arg)
 {
 	struct tmpl_index *data = arg;
 	struct paste *paste = &data->pastes[data->current];
+	struct khtmlreq htmlreq;
+
+	khtml_open(&htmlreq, data->req, KHTML_PRETTY);
 
 	switch (index) {
 	case 0:
-		khttp_puts(data->req, paste->uuid);
+		khtml_puts(&htmlreq, paste->uuid);
 		break;
 	case 1:
-		khttp_puts(data->req, paste->title);
+		khtml_puts(&htmlreq, paste->title);
 		break;
 	case 2:
-		khttp_puts(data->req, paste->author);
+		khtml_puts(&htmlreq, paste->author);
 		break;
 	case 3:
-		khttp_puts(data->req, paste->language);
+		khtml_puts(&htmlreq, paste->language);
 		break;
 	case 4:
-		khttp_puts(data->req, ttl(paste->timestamp, paste->duration));
+		khtml_puts(&htmlreq, ttl(paste->timestamp, paste->duration));
 		break;
 	case 5:
-		khttp_puts(data->req, bstrftime("%c", localtime(&paste->timestamp)));
+		khtml_puts(&htmlreq, bstrftime("%c", localtime(&paste->timestamp)));
 		break;
 	default:
 		break;
 	}
+
+	khtml_close(&htmlreq);
 
 	return true;
 }
@@ -451,6 +484,8 @@ static int
 tmpl_index(size_t index, void *arg)
 {
 	/* No check, only one index. */
+	(void)index;
+
 	struct tmpl_index *data = arg;
 	const struct ktemplate kt = {
 		.key    = tmpl_index_pastes_keywords,
@@ -472,19 +507,22 @@ tmpl_new(size_t index, void *arg)
 {
 	struct tmpl_paste *data = arg;
 	struct paste *paste = &data->paste;
+	struct khtmlreq htmlreq;
+
+	khtml_open(&htmlreq, data->req, KHTML_PRETTY);
 
 	switch (index) {
 	case 0:
 		if (paste->title)
-			khttp_puts(data->req, paste->title);
+			khtml_puts(&htmlreq, paste->title);
 		break;
 	case 1:
 		if (paste->author)
-			khttp_puts(data->req, paste->author);
+			khtml_puts(&htmlreq, paste->author);
 		break;
 	case 2:
 		if (paste->code)
-			khttp_puts(data->req, paste->code);
+			khtml_puts(&htmlreq, paste->code);
 		break;
 	case 3:
 		/* Add checked attribute to combobox. */
@@ -500,6 +538,8 @@ tmpl_new(size_t index, void *arg)
 	default:
 		break;
 	};
+
+	khtml_close(&htmlreq);
 
 	return true;
 }
@@ -586,7 +626,10 @@ static void
 page_new_post(struct kreq *req)
 {
 	struct paste paste = {
-		.visible = true
+		.author         = estrdup("Anonymous"),
+		.title          = estrdup("Untitled"),
+		.language       = estrdup("nohighlight"),
+		.visible        = true
 	};
 
 	for (size_t i = 0; i < req->fieldsz; ++i) {
@@ -594,11 +637,11 @@ page_new_post(struct kreq *req)
 		const char *val = req->fields[i].val;
 
 		if (strcmp(key, "title") == 0)
-			paste.title = estrdup(val);
+			replace(&paste.title, val);
 		else if (strcmp(key, "author") == 0)
-			paste.author = estrdup(val);
+			replace(&paste.author, val);
 		else if (strcmp(key, "language") == 0)
-			paste.language = estrdup(val);
+			replace(&paste.language, val);
 		else if (strcmp(key, "duration") == 0)
 			paste.duration = duration(val);
 		else if (strcmp(key, "code") == 0)
@@ -607,18 +650,14 @@ page_new_post(struct kreq *req)
 			paste.visible = strcmp(val, "on") != 0;
 	}
 
-	if (!paste.title || !paste.author || !paste.language || !paste.code)
-		page(req, NULL, KHTTP_400, "400.html");
+	if (!database_insert(&paste))
+		page(req, NULL, KHTTP_500, "500.html");
 	else {
-		if (!database_insert(&paste))
-			page(req, NULL, KHTTP_500, "500.html");
-		else {
-			/* Redirect to paste details. */
-			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
-			khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
-			khttp_body(req);
-			khttp_free(req);
-		}
+		/* Redirect to paste details. */
+		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
+		khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
+		khttp_body(req);
+		khttp_free(req);
 	}
 
 	paste_finish(&paste);
@@ -746,11 +785,48 @@ page_download(struct kreq *req)
 }
 
 static void
+page_static_get(struct kreq *req)
+{
+	struct stat st;
+	char path[PATH_MAX];
+
+	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath);
+
+	if (stat(path, &st) < 0)
+		page(req, NULL, KHTTP_404, "404.html");
+	else {
+		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
+		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[req->mime]);
+		khttp_head(req, kresps[KRESP_CONTENT_TYPE],
+		    "%llu", (unsigned long long)(st.st_size));
+		khttp_body(req);
+		khttp_template(req, NULL, path);
+		khttp_free(req);
+	}
+}
+
+static void
+page_static(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_static_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
+}
+
+static void
 process(struct kreq *req)
 {
 	assert(req);
 
-	handlers[req->page](req);
+	if (req->page == PAGE_LAST)
+		page(req, NULL, KHTTP_404, "404.html");
+	else
+		handlers[req->page](req);
 }
 
 void

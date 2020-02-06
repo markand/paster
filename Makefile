@@ -19,10 +19,8 @@
 .POSIX:
 
 CC=             cc
-CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -g
-# Release
-# CFLAGS=         -std=c18 -Wall -Wextra -pedantic -O3 -DNDEBUG -D_XOPEN_SOURCE=700
-LDFLAGS=        -lkcgi -lz
+CFLAGS=         -Wall -Wextra -std=c18 -pedantic -D_XOPEN_SOURCE=700 -DNDEBUG -O3
+LDFLAGS=        -static -lkcgi -lkcgihtml -lz
 
 SRCS=           config.c database.c http.c log.c pasterd.c paste.c util.c
 OBJS=           ${SRCS:.c=.o}
@@ -67,11 +65,16 @@ clean:
 	rm -f extern/sqlite3.o extern/libsqlite3.a
 	rm -f pasterd paster ${OBJS} ${DEPS}
 
-install:
+install-paster:
+	mkdir -p ${DESTDIR}${BINDIR}
+	cp paster ${DESTDIR}${BINDIR}
+	
+install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
 	cp pasterd ${DESTDIR}${BINDIR}
-	cp paster ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${SHAREDIR}/paster
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
+
+install: install-pasterd install-paster
 
 .PHONY: all clean run
