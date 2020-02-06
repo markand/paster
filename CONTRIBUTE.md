@@ -1,5 +1,5 @@
 paster CONTRIBUTING GUIDE
-===============================
+=========================
 
 Read this guide if you want to contribute to paster. The purpose of this
 document is to describe the steps to submit a patch.

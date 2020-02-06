@@ -19,7 +19,7 @@
 .POSIX:
 
 CC=             cc
-CFLAGS=         -Wall -Wextra -std=c18 -pedantic -D_XOPEN_SOURCE=700 -DNDEBUG -O3
+CFLAGS=         -std=c18 -pedantic -D_XOPEN_SOURCE=700 -DNDEBUG -O3
 LDFLAGS=        -static -lkcgi -lkcgihtml -lz
 
 SRCS=           config.c database.c http.c log.c pasterd.c paste.c util.c
