@@ -92,6 +92,23 @@ static const char *sql_clear =
 	"\n"
 	"END TRANSACTION";
 
+static const char *sql_search =
+	"SELECT uuid\n"
+	"     , title\n"
+	"     , author\n"
+	"     , language\n"
+	"     , code\n"
+	"     , strftime('%s', date) AS date\n"
+	"     , visible\n"
+	"     , duration\n"
+	"  FROM paste\n"
+	" WHERE title like ?\n"
+	"   AND author like ?\n"
+	"   AND language like ?\n"
+	"   AND visible = 1\n"
+	" ORDER BY date DESC\n"
+	" LIMIT ?\n";
+
 /* sqlite3 use const unsigned char *. */
 static char *
 dup(const unsigned char *s)
@@ -176,7 +193,6 @@ database_recents(struct paste *pastes, size_t *max)
 	log_debug("database: found %zu pastes", i);
 	sqlite3_finalize(stmt);
 	*max = i;
-
 
 	return true;
 
@@ -277,6 +293,61 @@ sqlite_err:
 	paste->uuid = NULL;
 
 	return false;
+}
+
+bool
+database_search(struct paste *pastes,
+                size_t *max,
+                const char *title,
+                const char *author,
+                const char *language)
+{
+	assert(pastes);
+	assert(max);
+
+	sqlite3_stmt *stmt = NULL;
+
+	log_debug("database: searching title=%s, author=%s, language=%s",
+	    title    ? title    : "",
+	    author   ? author   : "",
+	    language ? language : "");
+
+	memset(pastes, 0, *max * sizeof (struct paste));
+
+	/* Select everything if not specified. */
+	title    = title    ? title    : "%";
+	author   = author   ? author   : "%";
+	language = language ? language : "%";
+
+	if (sqlite3_prepare(db, sql_search, -1, &stmt, NULL) != SQLITE_OK)
+		goto sqlite_err;
+	if (sqlite3_bind_text(stmt, 1, title, -1, NULL) != SQLITE_OK)
+		goto sqlite_err;
+	if (sqlite3_bind_text(stmt, 2, author, -1, NULL) != SQLITE_OK)
+		goto sqlite_err;
+	if (sqlite3_bind_text(stmt, 3, language, -1, NULL) != SQLITE_OK)
+		goto sqlite_err;
+	if (sqlite3_bind_int64(stmt, 4, *max) != SQLITE_OK)
+		goto sqlite_err;
+
+	size_t i = 0;
+
+	for (; i < *max && sqlite3_step(stmt) == SQLITE_ROW; ++i)
+		convert(stmt, &pastes[i]);
+
+	log_debug("database: found %zu pastes", i);
+	sqlite3_finalize(stmt);
+	*max = i;
+
+	return true;
+
+sqlite_err:
+	log_warn("database: error (search): %s\n", sqlite3_errmsg(db));
+
+	if (stmt)
+		sqlite3_finalize(stmt);
+
+	return (*max = 0);
 }
 
 void

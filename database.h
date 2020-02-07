@@ -36,6 +36,13 @@ database_get(struct paste *paste, const char *uuid);
 bool
 database_insert(struct paste *paste);
 
+bool
+database_search(struct paste *pastes,
+                size_t *max,
+                const char *title,
+                const char *author,
+                const char *language);
+
 void
 database_clear(void);
 

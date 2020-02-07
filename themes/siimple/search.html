@@ -1,0 +1,26 @@
+	<h1>Search pastes</h1>
+
+	<div class="siimple-form">
+		<form action="/search" method="post">
+			<div class="siimple-field">
+				<label class="siimple-field-label">Title</label>
+				<input class="siimple-input" name="title" type="text" placeholder="Title" />
+			</div>
+
+			<div class="siimple-field">
+				<label class="siimple-field-label">Author</label>
+				<input class="siimple-input" name="author" type="text" placeholder="Author" />
+			</div>
+
+			<div class="siimple-field">
+				<label class="siimple-field-label">Language</label>
+				<select class="siimple-select" name="language">
+					@@languages@@
+				</select>
+			</div>
+
+			<div class="siimple-form-field">
+				<input type="submit" class="siimple-btn siimple-btn--blue"></input>
+			</div>
+		</form>
+	</div>

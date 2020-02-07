@@ -43,6 +43,7 @@ static void page_new(struct kreq *);
 static void page_fork(struct kreq *);
 static void page_paste(struct kreq *);
 static void page_download(struct kreq *);
+static void page_search(struct kreq *);
 static void page_static(struct kreq *);
 
 enum page {
@@ -51,6 +52,7 @@ enum page {
 	PAGE_FORK,
 	PAGE_PASTE,
 	PAGE_DOWNLOAD,
+	PAGE_SEARCH,
 	PAGE_STATIC,
 	PAGE_LAST       /* Not used. */
 };
@@ -61,6 +63,7 @@ static const char *pages[] = {
 	[PAGE_FORK]     = "fork",
 	[PAGE_PASTE]    = "paste",
 	[PAGE_DOWNLOAD] = "download",
+	[PAGE_SEARCH]   = "search",
 	[PAGE_STATIC]   = "static"
 };
 
@@ -70,6 +73,7 @@ static void (*handlers[])(struct kreq *req) = {
 	[PAGE_FORK]     = page_fork,
 	[PAGE_PASTE]    = page_paste,
 	[PAGE_DOWNLOAD] = page_download,
+	[PAGE_SEARCH]   = page_search,
 	[PAGE_STATIC]   = page_static
 };
 
@@ -781,6 +785,88 @@ page_download(struct kreq *req)
 	switch (req->method) {
 	case KMETHOD_GET:
 		page_download_get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
+}
+
+static void
+page_search_get(struct kreq *req)
+{
+	/* We re-use the /new form with an empty paste. */
+	struct tmpl_paste data = {
+		.req = req
+	};
+	const struct ktemplate kt = {
+		.key    = tmpl_new_keywords,
+		.keysz  = 6,
+		.cb     = tmpl_new,
+		.arg    = &data
+	};
+
+	page(req, &kt, KHTTP_200, "search.html");
+}
+
+static void
+page_search_post(struct kreq *req)
+{
+	struct tmpl_index data = {
+		.req    = req,
+		.count  = 10
+	};
+
+	const char *title = NULL;
+	const char *author = NULL;
+	const char *language = NULL;
+
+	for (size_t i = 0; i < req->fieldsz; ++i) {
+		const char *key = req->fields[i].key;
+		const char *val = req->fields[i].val;
+
+		if (strcmp(key, "title") == 0)
+			title = val;
+		else if (strcmp(key, "author") == 0)
+			author = val;
+		else if (strcmp(key, "language") == 0)
+			language = val;
+	}
+
+	/* Sets to null if they are empty. */
+	if (title && strlen(title) == 0)
+		title = NULL;
+	if (author && strlen(author) == 0)
+		author = NULL;
+	if (language && strlen(language) == 0)
+		language = NULL;
+
+	if (!database_search(data.pastes, &data.count, title, author, language))
+		page(req, NULL, KHTTP_500, "500.html");
+	else {
+		struct ktemplate kt = {
+			.key    = tmpl_index_keywords,
+			.keysz  = 1,
+			.arg    = &data,
+			.cb     = tmpl_index
+		};
+
+		page(req, &kt, KHTTP_200, "index.html");
+	}
+
+	for (size_t i = 0; i < data.count; ++i)
+		paste_finish(&data.pastes[i]);
+}
+
+static void
+page_search(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		page_search_get(req);
+		break;
+	case KMETHOD_POST:
+		page_search_post(req);
 		break;
 	default:
 		page(req, NULL, KHTTP_400, "400.html");
