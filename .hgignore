@@ -23,3 +23,6 @@ extern/libsqlite3.a
 ^pasterd(\.8)?$
 ^pasterd-clean(\.8)?$
 ^paster(\.1)?$
+
+# Distribution files.
+^paster-\d\.\d.\d\.tar\.xz(\.asc)?$

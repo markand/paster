@@ -29,7 +29,10 @@ SHAREDIR=       ${PREFIX}/share
 MANDIR=         ${PREFIX}/share/man
 VARDIR=         ${PREFIX}/var
 
+VERSION=        0.1.0
+
 CORE_SRCS=      config.c database.c http.c log.c paste.c util.c
+CORE_HDRS=      config.h database.h http.h log.h paste.h util.h
 CORE_OBJS=      ${CORE_SRCS:.c=.o}
 CORE_DEPS=      ${CORE_SRCS:.c=.d}
 
@@ -91,7 +94,7 @@ install-paster:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
 	cp paster ${DESTDIR}${BINDIR}
 	cp paster.1 ${DESTDIR}${MANDIR}/man1/paster.1
-	
+
 install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${MANDIR}/man8
@@ -103,4 +106,17 @@ install-pasterd:
 
 install: install-pasterd install-paster
 
-.PHONY: all clean run
+dist: clean
+	mkdir -p paster-${VERSION}
+	cp -R extern paster-${VERSION}
+	cp -R themes paster-${VERSION}
+	cp ${CORE_SRCS} ${CORE_HDRS} paster-${VERSION}
+	cp pasterd.8.in pasterd.c paster-${VERSION}
+	cp pasterd-clean.8.in pasterd-clean.c paster-${VERSION}
+	cp paster.1.in paster.sh paster-${VERSION}
+	cp Makefile CHANGES.md CONTRIBUTE.md CREDITS.md INSTALL.md LICENSE.md \
+	    README.md STYLE.md TODO.md paster-${VERSION}
+	tar -cJf paster-${VERSION}.tar.xz paster-${VERSION}
+	rm -rf paster-${VERSION}
+
+.PHONY: all clean dist run
