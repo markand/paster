@@ -35,10 +35,10 @@ void
 log_open(void);
 
 void
-log_write(enum log_level level, const char *fmt, ...);
+log_write(enum log_level, const char *, ...);
 
 void
-log_vwrite(enum log_level level, const char *fmt, va_list ap);
+log_vwrite(enum log_level, const char *, va_list);
 
 void
 log_finish(void);

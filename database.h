@@ -25,23 +25,23 @@
 struct paste;
 
 bool
-database_open(const char *path);
+database_open(const char *);
 
 bool
-database_recents(struct paste *pastes, size_t *max);
+database_recents(struct paste *, size_t *);
 
 bool
-database_get(struct paste *paste, const char *uuid);
+database_get(struct paste *, const char *);
 
 bool
-database_insert(struct paste *paste);
+database_insert(struct paste *);
 
 bool
-database_search(struct paste *pastes,
-                size_t *max,
-                const char *title,
-                const char *author,
-                const char *language);
+database_search(struct paste *,
+                size_t *,
+                const char *,
+                const char *,
+                const char *);
 
 void
 database_clear(void);

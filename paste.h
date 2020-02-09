@@ -44,6 +44,6 @@ struct paste {
 };
 
 void
-paste_finish(struct paste *paste);
+paste_finish(struct paste *);
 
 #endif /* !PASTER_PASTE_H */
