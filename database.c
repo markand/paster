@@ -162,6 +162,9 @@ database_open(const char *path)
 		return false;
 	}
 
+	/* Wait for 30 seconds to lock the database. */
+	sqlite3_busy_timeout(db, 30000);
+
 	if (sqlite3_exec(db, sql_init, NULL, NULL, NULL) != SQLITE_OK) {
 		log_warn("database: unable to initialize %s: %s", path, sqlite3_errmsg(db));
 		return false;
