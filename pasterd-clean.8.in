@@ -49,7 +49,7 @@ otherwise you may change file permissions.
 .Pp
 Example of cron job:
 .Bd -literal -offset Ds
-0 */1 * * * www pasterd-clean -d /var/paster/paster.db
+0 * * * * www pasterd-clean -d /var/paster/paster.db
 .Ed
 .\" ENVIRONMENT
 .Sh ENVIRONMENT

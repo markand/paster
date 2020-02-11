@@ -102,7 +102,8 @@ install-pasterd:
 	cp pasterd-clean ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${SHAREDIR}/paster
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
-	cp pasterd.8 ${DESTDIR}${MANDIR}/man8/pasterd.8
+	cp pasterd.8 ${DESTDIR}${MANDIR}/man8
+	cp pasterd-clean.8 ${DESTDIR}${MANDIR}/man8
 
 install: install-pasterd install-paster
 
