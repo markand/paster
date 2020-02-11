@@ -58,6 +58,10 @@ The following environment variables are detected:
 .It Va PASTERD_DATABASE_PATH No (string)
 Path to the SQLite database.
 .El
+.\" AUTHORS
+.Sh AUTHORS
+.Nm
+was written by David Demelier <markand@malikania.fr>
 .\" SEE ALSO
 .Sh SEE ALSO
 .Xr pasterd 8

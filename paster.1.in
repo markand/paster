@@ -86,6 +86,10 @@ grep error logs.txt | paster - http://example.org
 .Bd -literal -offset
 paste -x -d hour private.txt http://example.org
 .Ed
+.\" AUTHORS
+.Sh AUTHORS
+.Nm
+was written by David Demelier <markand@malikania.fr>
 .\" SEE ALSO
 .Sh SEE ALSO
 .Xr pasterd 8

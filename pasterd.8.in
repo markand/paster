@@ -38,7 +38,7 @@ It supports:
 .Bl -bullet -compat
 .It
 Listing of recent pastes,
-.It 
+.It
 Submission of new pastes,
 .It
 Searching existing pastes,
@@ -199,6 +199,10 @@ Directory containing the theme.
 .It Va PASTERD_VERBOSITY No (number)
 Verbosity level, 0 to disable completely.
 .El
+.\" AUTHORS
+.Sh AUTHORS
+.Nm
+was written by David Demelier <markand@malikania.fr>
 .\" SEE ALSO
 .Sh SEE ALSO
 .Xr paster 8 ,
