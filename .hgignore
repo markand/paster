@@ -26,3 +26,7 @@ extern/libsqlite3.a
 
 # Distribution files.
 ^paster-\d\.\d.\d\.tar\.xz(\.asc)?$
+
+# Test files.
+^test\.db$
+^tests/test-database$

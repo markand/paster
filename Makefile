@@ -36,16 +36,18 @@ CORE_HDRS=      config.h database.h http.h log.h paste.h util.h
 CORE_OBJS=      ${CORE_SRCS:.c=.o}
 CORE_DEPS=      ${CORE_SRCS:.c=.d}
 
+TESTS_SRCS=     tests/test-database.c
+TESTS_OBJS=     ${TESTS_SRCS:.c=}
+
 SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
                 -DSQLITE_OMIT_LOAD_EXTENSION \
                 -DSQLITE_OMIT_DEPRECATED \
                 -DSQLITE_DEFAULT_FOREIGN_KEYS=1
 
 MY_CFLAGS=      -std=c18 \
-                -Iextern \
+                -I. -Iextern \
                 -D_XOPEN_SOURCE=700 \
-                -DSHAREDIR=\"${SHAREDIR}\" \
-                -DVARDIR=\"${VARDIR}\" \
+                -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\" \
                 ${CFLAGS}
 MY_LDFLAGS=     -static -lkcgi -lkcgihtml -lz ${LDFLAGS}
 
@@ -60,6 +62,9 @@ all: pasterd pasterd-clean paster
 
 .c.o:
 	${CC} ${MY_CFLAGS} -MMD -Iextern -c $<
+
+.c:
+	${CC} ${MY_CFLAGS} $< -o $@ ${CORE_OBJS} extern/libsqlite3.a ${MY_LDFLAGS}
 
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
@@ -88,6 +93,7 @@ clean:
 	rm -f pasterd pasterd.d pasterd.o pasterd.8
 	rm -f pasterd-clean pasterd-clean.d pasterd-clean.o pasterd-clean.8
 	rm -f paster paster.1
+	rm -f test.db ${TESTS_OBJS}
 
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
@@ -120,4 +126,9 @@ dist: clean
 	tar -cJf paster-${VERSION}.tar.xz paster-${VERSION}
 	rm -rf paster-${VERSION}
 
-.PHONY: all clean dist run
+${TESTS_OBJS}: ${CORE_OBJS} extern/libsqlite3.a
+
+tests: ${TESTS_OBJS}
+	for t in ${TESTS_OBJS}; do $$t; done
+
+.PHONY: all clean dist run tests
