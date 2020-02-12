@@ -27,10 +27,10 @@ paste_finish(struct paste *paste)
 {
 	assert(paste);
 
+	free(paste->id);
 	free(paste->title);
 	free(paste->author);
 	free(paste->language);
 	free(paste->code);
-	free(paste->uuid);
 	memset(paste, 0, sizeof (struct paste));
 }

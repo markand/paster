@@ -80,7 +80,7 @@ recents_one(void)
 		GREATEST_FAIL();
 
 	GREATEST_ASSERT_EQ(max, 1);
-	GREATEST_ASSERT(pastes[0].uuid);
+	GREATEST_ASSERT(pastes[0].id);
 	GREATEST_ASSERT_STR_EQ(pastes[0].title, "test 1");
 	GREATEST_ASSERT_STR_EQ(pastes[0].author, "unit test");
 	GREATEST_ASSERT_STR_EQ(pastes[0].language, "cpp");
@@ -145,7 +145,7 @@ recents_many(void)
 
 	for (int i = 0; i < 3; ++i) {
 		/* Selected in most recents first. */
-		GREATEST_ASSERT(pastes[i].uuid);
+		GREATEST_ASSERT(pastes[i].id);
 		GREATEST_ASSERT_STR_EQ(pastes[i].title,
 		    bprintf("test %d", expected[i]));
 		GREATEST_ASSERT_STR_EQ(pastes[i].author,
@@ -191,7 +191,7 @@ recents_limits(void)
 
 	for (int i = 0; i < 3; ++i) {
 		/* Selected in most recents first. */
-		GREATEST_ASSERT(pastes[i].uuid);
+		GREATEST_ASSERT(pastes[i].id);
 		GREATEST_ASSERT_STR_EQ(pastes[i].title,
 		    bprintf("test %d", expected[i]));
 		GREATEST_ASSERT_STR_EQ(pastes[i].author,
@@ -232,10 +232,10 @@ get_basic(void)
 
 	if (!database_insert(&original))
 		GREATEST_FAIL();
-	if (!database_get(&new, original.uuid))
+	if (!database_get(&new, original.id))
 		GREATEST_FAIL();
 
-	GREATEST_ASSERT_STR_EQ(new.uuid, original.uuid);
+	GREATEST_ASSERT_STR_EQ(new.id, original.id);
 	GREATEST_ASSERT_STR_EQ(new.title, original.title);
 	GREATEST_ASSERT_STR_EQ(new.author, original.author);
 	GREATEST_ASSERT_STR_EQ(new.language, original.language);
@@ -252,7 +252,7 @@ get_nonexistent(void)
 	if (!database_get(&new, "unknown"))
 		GREATEST_FAIL();
 
-	GREATEST_ASSERT(!new.uuid);
+	GREATEST_ASSERT(!new.id);
 	GREATEST_ASSERT(!new.title);
 	GREATEST_ASSERT(!new.author);
 	GREATEST_ASSERT(!new.language);
@@ -315,7 +315,7 @@ search_basic(void)
 		GREATEST_FAIL();
 
 	GREATEST_ASSERT_EQ(max, 1);
-	GREATEST_ASSERT(searched[0].uuid);
+	GREATEST_ASSERT(searched[0].id);
 	GREATEST_ASSERT_STR_EQ(searched[0].title, "This is in C");
 	GREATEST_ASSERT_STR_EQ(searched[0].author, "markand");
 	GREATEST_ASSERT_STR_EQ(searched[0].language, "cpp");
@@ -353,7 +353,7 @@ search_notfound(void)
 		GREATEST_FAIL();
 
 	GREATEST_ASSERT_EQ(max, 0);
-	GREATEST_ASSERT(!searched.uuid);
+	GREATEST_ASSERT(!searched.id);
 	GREATEST_ASSERT(!searched.title);
 	GREATEST_ASSERT(!searched.author);
 	GREATEST_ASSERT(!searched.language);
@@ -389,7 +389,7 @@ search_private(void)
 		GREATEST_FAIL();
 
 	GREATEST_ASSERT_EQ(max, 0);
-	GREATEST_ASSERT(!searched.uuid);
+	GREATEST_ASSERT(!searched.id);
 	GREATEST_ASSERT(!searched.title);
 	GREATEST_ASSERT(!searched.author);
 	GREATEST_ASSERT(!searched.language);
@@ -460,7 +460,7 @@ clear_run(void)
 		GREATEST_FAIL();
 
 	GREATEST_ASSERT_EQ(max, 1);
-	GREATEST_ASSERT(searched.uuid);
+	GREATEST_ASSERT(searched.id);
 	GREATEST_ASSERT_STR_EQ(searched.title, "This is in python");
 	GREATEST_ASSERT_STR_EQ(searched.author, "NiReaS");
 	GREATEST_ASSERT_STR_EQ(searched.language, "python");

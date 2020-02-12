@@ -116,31 +116,10 @@ dup(const unsigned char *s)
 	return estrdup(s ? (const char *)(s) : "");
 }
 
-static const char *
-create_id(void)
-{
-	static char uuid[256];
-
-	/*
-	 * Not a very strong generation but does not require to link against
-	 * util-linux.
-	 *
-	 * See https://stackoverflow.com/questions/2174768/generating-random-uuids-in-linux
-	 */
-	sprintf(uuid, "%x%x-%x-%x-%x-%x%x%x",
-	    rand(), rand(),
-	    rand(),
-	    ((rand() & 0x0fff) | 0x4000),
-	    rand() % 0x3fff + 0x8000,
-	    rand(), rand(), rand());
-
-	return uuid;
-}
-
 static void
 convert(sqlite3_stmt *stmt, struct paste *paste)
 {
-	paste->uuid = dup(sqlite3_column_text(stmt, 0));
+	paste->id = dup(sqlite3_column_text(stmt, 0));
 	paste->title = dup(sqlite3_column_text(stmt, 1));
 	paste->author = dup(sqlite3_column_text(stmt, 2));
 	paste->language = dup(sqlite3_column_text(stmt, 3));
@@ -148,6 +127,57 @@ convert(sqlite3_stmt *stmt, struct paste *paste)
 	paste->timestamp = sqlite3_column_int64(stmt, 5);
 	paste->visible = sqlite3_column_int(stmt, 6);
 	paste->duration = sqlite3_column_int64(stmt, 7);
+}
+
+static bool
+exists(const char *id)
+{
+	assert(id);
+
+	sqlite3_stmt *stmt = NULL;
+	bool ret = false;
+
+	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) != SQLITE_OK) {
+		log_warn("database: error (exists): %s", sqlite3_errmsg(db));
+		return false;
+	}
+
+	ret = sqlite3_step(stmt) == SQLITE_ROW;
+	sqlite3_finalize(stmt);
+
+	return ret;
+}
+
+static const char *
+create_id(void)
+{
+	static const char table[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+	static char id[12];
+
+	for (int i = 0; i < sizeof (id); ++i)
+		id[i] = table[rand() % (sizeof (table))];
+
+	return id;
+}
+
+static bool
+set_id(struct paste *paste)
+{
+	assert(paste);
+
+	paste->id = NULL;
+
+	/*
+	 * Avoid infinite loop, we only try to create a new id in 30 steps.
+	 */
+	int tries = 0;
+
+	do {
+		free(paste->id);
+		paste->id = estrdup(create_id());
+	} while (++tries < 30 && exists(paste->id));
+
+	return tries < 30;
 }
 
 bool
@@ -252,7 +282,8 @@ database_insert(struct paste *paste)
 {
 	assert(paste);
 
-	sqlite3_stmt* stmt = NULL;
+	sqlite3_stmt *stmt = NULL;
+
 	log_debug("database: creating new paste");
 
 	if (sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL) != SQLITE_OK) {
@@ -260,13 +291,16 @@ database_insert(struct paste *paste)
 		return false;
 	}
 
+	if (!set_id(paste)) {
+		log_warn("database: unable to randomize unique identifier");
+		sqlite3_exec(db, "END TRANSACTION", NULL, NULL, NULL);
+		return false;
+	}
+
 	if (sqlite3_prepare(db, sql_insert, -1, &stmt, NULL) != SQLITE_OK)
 		goto sqlite_err;
 
-	/* Create a new uuid first. */
-	paste->uuid = estrdup(create_id());
-
-	sqlite3_bind_text(stmt, 1, paste->uuid, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 1, paste->id, -1, SQLITE_STATIC);
 	sqlite3_bind_text(stmt, 2, paste->title, -1, SQLITE_STATIC);
 	sqlite3_bind_text(stmt, 3, paste->author, -1, SQLITE_STATIC);
 	sqlite3_bind_text(stmt, 4, paste->language, -1, SQLITE_STATIC);
@@ -281,7 +315,7 @@ database_insert(struct paste *paste)
 	sqlite3_finalize(stmt);
 
 	log_info("database: new paste (%s) from %s expires in one %lld seconds",
-	    paste->uuid, paste->author, paste->duration);
+	    paste->id, paste->author, paste->duration);
 
 	return true;
 
@@ -292,8 +326,8 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	free(paste->uuid);
-	paste->uuid = NULL;
+	free(paste->id);
+	paste->id = NULL;
 
 	return false;
 }

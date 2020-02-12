@@ -33,7 +33,7 @@
  * Every string in the paste is assumed to be allocated on the heap.
  */
 struct paste {
-	char *uuid;
+	char *id;
 	char *title;
 	char *author;
 	char *language;

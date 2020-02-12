@@ -94,7 +94,7 @@ static const char *tmpl_index_keywords[] = {
 };
 
 static const char *tmpl_index_pastes_keywords[] = {
-	"uuid",
+	"id",
 	"name",
 	"author",
 	"language",
@@ -103,7 +103,7 @@ static const char *tmpl_index_pastes_keywords[] = {
 };
 
 static const char *tmpl_paste_keywords[] = {
-	"uuid",
+	"id",
 	"title",
 	"author",
 	"language",
@@ -415,7 +415,7 @@ tmpl_paste(size_t index, void *arg)
 
 	switch (index) {
 	case 0:
-		khtml_puts(&htmlreq, paste->uuid);
+		khtml_puts(&htmlreq, paste->id);
 		break;
 	case 1:
 		khtml_puts(&htmlreq, paste->title);
@@ -458,7 +458,7 @@ tmpl_index_pastes(size_t index, void *arg)
 
 	switch (index) {
 	case 0:
-		khtml_puts(&htmlreq, paste->uuid);
+		khtml_puts(&htmlreq, paste->id);
 		break;
 	case 1:
 		khtml_puts(&htmlreq, paste->title);
@@ -663,7 +663,7 @@ page_new_post(struct kreq *req)
 	else {
 		/* Redirect to paste details. */
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
-		khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.uuid);
+		khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", paste.id);
 		khttp_body(req);
 		khttp_free(req);
 	}
@@ -771,7 +771,7 @@ page_download_get(struct kreq *req)
 #endif
 		khttp_head(req, kresps[KRESP_CONNECTION], "keep-alive");
 		khttp_head(req, kresps[KRESP_CONTENT_DISPOSITION],
-		    "attachment; filename=\"%s.%s\"", paste.uuid, paste.language);
+		    "attachment; filename=\"%s.%s\"", paste.id, paste.language);
 		khttp_body(req);
 		khttp_puts(req, paste.code);
 		khttp_free(req);
