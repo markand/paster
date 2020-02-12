@@ -74,7 +74,7 @@ all: pasterd pasterd-clean paster
 	    < $< > $@
 
 ${SQLITE_LIB}: extern/sqlite3.c extern/sqlite3.h
-	${CC} ${CFLAGS} ${SQLITE_FLAGS} -c $< -o extern/sqlite3.o
+	${CC} ${CFLAGS} ${SQLITE_FLAGS} -c extern/sqlite3.c -o extern/sqlite3.o
 	${AR} -rc $@ extern/sqlite3.o
 
 ${CORE_LIB}: ${CORE_OBJS}
