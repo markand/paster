@@ -35,6 +35,7 @@ CORE_SRCS=      config.c database.c http.c log.c paste.c util.c
 CORE_HDRS=      config.h database.h http.h log.h paste.h util.h
 CORE_OBJS=      ${CORE_SRCS:.c=.o}
 CORE_DEPS=      ${CORE_SRCS:.c=.d}
+CORE_LIB=       libpaster.a
 
 TESTS_SRCS=     tests/test-database.c
 TESTS_OBJS=     ${TESTS_SRCS:.c=}
@@ -43,6 +44,7 @@ SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
                 -DSQLITE_OMIT_LOAD_EXTENSION \
                 -DSQLITE_OMIT_DEPRECATED \
                 -DSQLITE_DEFAULT_FOREIGN_KEYS=1
+SQLITE_LIB=     libsqlite3.a
 
 MY_CFLAGS=      -std=c18 \
                 -I. -Iextern \
@@ -64,32 +66,31 @@ all: pasterd pasterd-clean paster
 	${CC} ${MY_CFLAGS} -MMD -Iextern -c $<
 
 .c:
-	${CC} ${MY_CFLAGS} $< -o $@ ${CORE_OBJS} extern/libsqlite3.a ${MY_LDFLAGS}
+	${CC} ${MY_CFLAGS} $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS}
 
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
 	    -e "s|@VARDIR@|${VARDIR}|" \
 	    < $< > $@
 
-extern/sqlite3.o: extern/sqlite3.c extern/sqlite3.h
-	${CC} ${MY_CFLAGS} ${SQLITE_FLAGS} -c $< -o $@
-
-extern/libsqlite3.a: extern/sqlite3.o
+${SQLITE_LIB}: extern/sqlite3.c extern/sqlite3.h
+	${CC} ${CFLAGS} ${SQLITE_FLAGS} -c $< -o extern/sqlite3.o
 	${AR} -rc $@ extern/sqlite3.o
 
-pasterd: ${CORE_OBJS} extern/libsqlite3.a pasterd.o pasterd.8
-	${CC} -o $@ ${CORE_OBJS} pasterd.o ${MY_LDFLAGS} extern/libsqlite3.a
+${CORE_LIB}: ${CORE_OBJS}
+	${AR} -rc $@ ${CORE_OBJS}
 
-pasterd-clean: ${OBJS} extern/libsqlite3.a pasterd-clean.o pasterd-clean.8
-	${CC} -o $@ ${CORE_OBJS} pasterd-clean.o ${MY_LDFLAGS} extern/libsqlite3.a
+pasterd: ${CORE_LIB} ${SQLITE_LIB} pasterd.o pasterd.8
+
+pasterd-clean: ${CORE_LIB} ${SQLITE_LIB} pasterd-clean.o pasterd-clean.8
 
 paster: paster.sh paster.1
 	cp paster.sh paster
 	chmod +x paster
 
 clean:
-	rm -f extern/sqlite3.o extern/libsqlite3.a
-	rm -f ${CORE_OBJS} ${CORE_DEPS}
+	rm -f ${SQLITE_LIB} extern/sqlite3.o
+	rm -f ${CORE_LIB} ${CORE_OBJS} ${CORE_DEPS}
 	rm -f pasterd pasterd.d pasterd.o pasterd.8
 	rm -f pasterd-clean pasterd-clean.d pasterd-clean.o pasterd-clean.8
 	rm -f paster paster.1
@@ -117,6 +118,7 @@ dist: clean
 	mkdir -p paster-${VERSION}
 	cp -R extern paster-${VERSION}
 	cp -R themes paster-${VERSION}
+	cp -R tests paster-${VERSION}
 	cp ${CORE_SRCS} ${CORE_HDRS} paster-${VERSION}
 	cp pasterd.8.in pasterd.c paster-${VERSION}
 	cp pasterd-clean.8.in pasterd-clean.c paster-${VERSION}
@@ -126,7 +128,7 @@ dist: clean
 	tar -cJf paster-${VERSION}.tar.xz paster-${VERSION}
 	rm -rf paster-${VERSION}
 
-${TESTS_OBJS}: ${CORE_OBJS} extern/libsqlite3.a
+${TESTS_OBJS}: ${CORE_LIB} ${SQLITE_LIB}
 
 tests: ${TESTS_OBJS}
 	for t in ${TESTS_OBJS}; do $$t; done
