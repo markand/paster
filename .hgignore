@@ -15,7 +15,8 @@
 \.DS_Store$
 
 # Temporary files.
-extern/libsqlite3.a
+^libpaster\.a$
+^libsqlite3\.a$
 \.o$
 \.d$
 
