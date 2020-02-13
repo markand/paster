@@ -29,7 +29,7 @@ SHAREDIR=       ${PREFIX}/share
 MANDIR=         ${PREFIX}/share/man
 VARDIR=         ${PREFIX}/var
 
-VERSION=        0.1.0
+VERSION=        0.2.0
 
 CORE_SRCS=      config.c database.c http.c log.c paste.c util.c
 CORE_HDRS=      config.h database.h http.h log.h paste.h util.h
