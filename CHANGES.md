@@ -1,6 +1,11 @@
 paster CHANGES
 ==============
 
+paster 0.2.1 2020-02-14
+-----------------------
+
+- Fix several database issues.
+
 paster 0.2.0 2020-02-13
 -----------------------
 
