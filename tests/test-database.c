@@ -249,9 +249,7 @@ get_nonexistent(void)
 {
 	struct paste new = { 0 };
 
-	if (!database_get(&new, "unknown"))
-		GREATEST_FAIL();
-
+	GREATEST_ASSERT(!database_get(&new, "unknown"));
 	GREATEST_ASSERT(!new.id);
 	GREATEST_ASSERT(!new.title);
 	GREATEST_ASSERT(!new.author);

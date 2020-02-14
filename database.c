@@ -244,10 +244,11 @@ database_get(struct paste *paste, const char *uuid)
 	assert(paste);
 	assert(uuid);
 
+	sqlite3_stmt* stmt = NULL;
+	bool found = false;
+
 	memset(paste, 0, sizeof (struct paste));
 	log_debug("database: accessing paste with uuid: %s", uuid);
-
-	sqlite3_stmt* stmt = NULL;
 
 	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) != SQLITE_OK ||
 	    sqlite3_bind_text(stmt, 1, uuid, -1, NULL) != SQLITE_OK)
@@ -256,6 +257,7 @@ database_get(struct paste *paste, const char *uuid)
 	switch (sqlite3_step(stmt)) {
 	case SQLITE_ROW:
 		convert(stmt, paste);
+		found = true;
 		break;
 	case SQLITE_MISUSE:
 	case SQLITE_ERROR:
@@ -266,7 +268,7 @@ database_get(struct paste *paste, const char *uuid)
 
 	sqlite3_finalize(stmt);
 
-	return true;
+	return found;
 
 sqlite_err:
 	if (stmt)
