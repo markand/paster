@@ -20,7 +20,7 @@ author="Anonymous"
 language="nohighlight"
 title="Untitled"
 duration="month"
-private=0
+public=0
 verbose=0
 
 die()
@@ -223,16 +223,19 @@ durations()
 usage()
 {
 	cat 1>&2 <<-EOF
-	usage: paster [-LDvx] [-a author] [-l language] [-d duration] [-t title] filename host
+	usage: paster [-LDpv] [-a author] [-l language] [-d duration] [-t title] filename host
 	EOF
 	exit 1
 }
 
 send()
 {
-	if [ $private -eq 1 ]; then
+	if [ $public -eq 1 ]; then
+		with_private="--data private=off"
+	else
 		with_private="--data private=on"
 	fi
+
 	if [ $verbose -eq 0 ]; then
 		with_verbose="-s"
 	fi
@@ -252,7 +255,7 @@ if ! command -v curl >/dev/null 2>&1; then
 	die "abort: curl is required"
 fi
 
-while getopts "LDa:d:l:t:vx" opt; do
+while getopts "LDa:d:l:pt:v" opt; do
 	case "$opt" in
 	D)
 		durations
@@ -269,14 +272,14 @@ while getopts "LDa:d:l:t:vx" opt; do
 	l)
 		language="$OPTARG"
 		;;
+	p)
+		public=1
+		;;
 	t)
 		title="$OPTARG"
 		;;
 	v)
 		verbose=1
-		;;
-	x)
-		private=1
 		;;
 	*)
 		usage

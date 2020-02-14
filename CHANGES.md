@@ -1,6 +1,11 @@
 paster CHANGES
 ==============
 
+paster -- current
+-----------------------
+
+- Pastes are private by default with paster(1) (#2481).
+
 paster 0.2.1 2020-02-14
 -----------------------
 

@@ -23,7 +23,7 @@
 .\" SYNOPSIS
 .Sh SYNOPSIS
 .Nm
-.Op Fl LDvx
+.Op Fl LDpv
 .Op Fl a Ar author
 .Op Fl l Ar language
 .Op Fl d Ar duration
@@ -56,10 +56,10 @@ Available options:
 List all supported languages.
 .It Fl D
 List all supported durations.
+.It Fl p
+Store the paste as public (default is private).
 .It Fl v
 Be more verbose.
-.It Fl x
-Store the paste as private.
 .It Fl a Ar author
 Sets the author, defaults to
 .Dq Anonymous .
@@ -82,9 +82,9 @@ paster -t "Some shell script" -a Francis -l shell main.sh http://example.org
 .Bd -literal -offset
 grep error logs.txt | paster - http://example.org
 .Ed
-.Ss Paste a non-listed file with a short duration.
+.Ss Paste a public file file with a short duration.
 .Bd -literal -offset
-paste -x -d hour private.txt http://example.org
+paster -p -d hour some-data.txt http://example.org
 .Ed
 .\" AUTHORS
 .Sh AUTHORS
