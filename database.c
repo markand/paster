@@ -155,7 +155,7 @@ create_id(void)
 	static char id[12];
 
 	for (int i = 0; i < sizeof (id); ++i)
-		id[i] = table[rand() % (sizeof (table))];
+		id[i] = table[rand() % (sizeof (table) - 1)];
 
 	return id;
 }
