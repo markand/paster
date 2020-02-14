@@ -135,15 +135,13 @@ exists(const char *id)
 	assert(id);
 
 	sqlite3_stmt *stmt = NULL;
-	bool ret = false;
+	bool ret = true;
 
-	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) != SQLITE_OK) {
-		log_warn("database: error (exists): %s", sqlite3_errmsg(db));
-		return false;
+	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) == SQLITE_OK) {
+		sqlite3_bind_text(stmt, 1, id, -1, NULL);
+		ret = sqlite3_step(stmt) == SQLITE_ROW;
+		sqlite3_finalize(stmt);
 	}
-
-	ret = sqlite3_step(stmt) == SQLITE_ROW;
-	sqlite3_finalize(stmt);
 
 	return ret;
 }
@@ -169,6 +167,9 @@ set_id(struct paste *paste)
 
 	/*
 	 * Avoid infinite loop, we only try to create a new id in 30 steps.
+	 *
+	 * On error, the function `exist` returns true to indicate we should
+	 * not try to save with that id.
 	 */
 	int tries = 0;
 
