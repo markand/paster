@@ -46,27 +46,26 @@ SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
                 -DSQLITE_DEFAULT_FOREIGN_KEYS=1
 SQLITE_LIB=     libsqlite3.a
 
-MY_CFLAGS=      -std=c18 \
-                -I. -Iextern \
+MY_CFLAGS=      -std=c11 \
+                -I. \
+                -Iextern \
                 -D_XOPEN_SOURCE=700 \
-                -DSHAREDIR=\"${SHAREDIR}\" -DVARDIR=\"${VARDIR}\" \
-                ${CFLAGS}
-MY_LDFLAGS=     -static -lkcgi -lkcgihtml -lz ${LDFLAGS}
+                -DSHAREDIR=\"${SHAREDIR}\" \
+                -DVARDIR=\"${VARDIR}\"
+MY_LDFLAGS=     -static -lkcgi -lkcgihtml -lz
 
 .SUFFIXES:
-.SUFFIXES: .c .o .in
+.SUFFIXES: .o .c .in
 
 all: pasterd pasterd-clean paster
 
--include ${CORE_DEPS}
--include pasterd.d
--include pasterd-clean.d
+-include ${CORE_DEPS} paster.d pasterd-clean.d
 
 .c.o:
-	${CC} ${MY_CFLAGS} -MMD -Iextern -c $<
+	${CC} ${MY_CFLAGS} -MMD -Iextern ${CFLAGS} -c $<
 
-.c:
-	${CC} ${MY_CFLAGS} $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS}
+.o:
+	${CC} $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS} ${LDFLAGS}
 
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
@@ -80,9 +79,9 @@ ${SQLITE_LIB}: extern/sqlite3.c extern/sqlite3.h
 ${CORE_LIB}: ${CORE_OBJS}
 	${AR} -rc $@ ${CORE_OBJS}
 
-pasterd: ${CORE_LIB} ${SQLITE_LIB} pasterd.o pasterd.8
+pasterd.o: ${CORE_LIB} ${SQLITE_LIB} pasterd.8
 
-pasterd-clean: ${CORE_LIB} ${SQLITE_LIB} pasterd-clean.o pasterd-clean.8
+pasterd-clean.o: ${CORE_LIB} ${SQLITE_LIB} pasterd-clean.8
 
 paster: paster.sh paster.1
 	cp paster.sh paster
