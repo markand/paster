@@ -40,7 +40,7 @@ static const char *sql_init =
 	"  language TEXT,\n"
 	"  code TEXT,\n"
 	"  date INT DEFAULT CURRENT_TIMESTAMP,\n"
-	"  visible INTEGER DEFAULT 1,\n"
+	"  visible INTEGER DEFAULT 0,\n"
 	"  duration INT\n"
 	");\n"
 	"\n"
