@@ -1,12 +1,12 @@
 /*
- * paste.h -- paste definition
+ * fragment-duration.h -- duration renderer
  *
  * Copyright (c) 2020 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,29 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_PASTE_H
-#define PASTER_PASTE_H
+#ifndef PASTER_FRAGMENT_DURATION_H
+#define PASTER_FRAGMENT_DURATION_H
 
-#include <stdbool.h>
-#include <time.h>
-
-#define PASTE_DURATION_HOUR      3600           /* Seconds in one hour. */
-#define PASTE_DURATION_DAY       86400          /* Seconds in one day. */
-#define PASTE_DURATION_WEEK      604800         /* Seconds in one week. */
-#define PASTE_DURATION_MONTH     2592000        /* Rounded to 30 days. */
-
-struct paste {
-	char *id;
-	char *title;
-	char *author;
-	char *language;
-	char *code;
-	time_t timestamp;
-	bool visible;
-	long long int duration;
-};
+struct kreq;
 
 void
-paste_finish(struct paste *);
+fragment_duration(struct kreq *, const char *);
 
-#endif /* !PASTER_PASTE_H */
+#endif /* !PASTER_FRAGMENT_DURATION_H */

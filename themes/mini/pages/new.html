@@ -1,0 +1,53 @@
+	<h1>Create paste</h1>
+
+	<form action="/new" method="post" enctype="multipart/form-data">
+		<div class="row responsive-label">
+			<div class="col-md-2">
+				<label for="title">Title</label>
+			</div>
+			<div class="col-md-10">
+				<input id="title" name="title" type="text" placeholder="Untitled" />
+			</div>
+		</div>
+
+		<div class="row responsive-label">
+			<div class="col-md-2">
+				<label for="author">Author</label>
+			</div>
+			<div class="col-md-10">
+				<input id="author" name="author" type="text" placeholder="Anonymous" />
+			</div>
+		</div>
+
+		<div class="row responsive-label">
+			<div class="col-md-2">
+				<label for="duration">Expires in</label>
+			</div>
+			<div class="col-md-10">
+				<select id="duration" name="duration">
+					@@durations@@
+				</select>
+			</div>
+		</div>
+
+		<div class="row responsive-label">
+			<div class="col-md-2">
+				<label for="private">Private</label>
+			</div>
+			<div class="col-md-10">
+				<input id="private" type="checkbox" name="private" checked></input>
+			</div>
+		</div>
+
+		<div class="row responsive-label">
+			<div class="col-md-12">
+				<textarea id="code" placeholder="What do you want to share?" rows="10" name="code" style="width: 100%">@@code@@</textarea>
+			</div>
+		</div>
+
+		<div class="row responsive-label">
+			<div class="col-md-2">
+				<button class="primary">Submit</button>
+			</div>
+		</div>
+	</form>

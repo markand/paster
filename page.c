@@ -1,5 +1,5 @@
 /*
- * paste.h -- paste definition
+ * page.c -- page renderer
  *
  * Copyright (c) 2020 David Demelier <markand@malikania.fr>
  * 
@@ -16,29 +16,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_PASTE_H
-#define PASTER_PASTE_H
-
-#include <stdbool.h>
-#include <time.h>
-
-#define PASTE_DURATION_HOUR      3600           /* Seconds in one hour. */
-#define PASTE_DURATION_DAY       86400          /* Seconds in one day. */
-#define PASTE_DURATION_WEEK      604800         /* Seconds in one week. */
-#define PASTE_DURATION_MONTH     2592000        /* Rounded to 30 days. */
-
-struct paste {
-	char *id;
-	char *title;
-	char *author;
-	char *language;
-	char *code;
-	time_t timestamp;
-	bool visible;
-	long long int duration;
-};
+#include "page.h"
+#include "util.h"
 
 void
-paste_finish(struct paste *);
-
-#endif /* !PASTER_PASTE_H */
+page(struct kreq *req, const struct ktemplate *tmpl, enum khttp status, const char *file)
+{
+	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
+	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[status]);
+	khttp_body(req);
+	khttp_template(req, NULL, path("fragments/header.html"));
+	khttp_template(req, tmpl, path(file));
+	khttp_template(req, NULL, path("fragments/footer.html"));
+	khttp_free(req);
+}

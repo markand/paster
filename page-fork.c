@@ -1,5 +1,5 @@
 /*
- * paste.h -- paste definition
+ * page-fork.c -- page /fork/<id>
  *
  * Copyright (c) 2020 David Demelier <markand@malikania.fr>
  * 
@@ -16,29 +16,41 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_PASTE_H
-#define PASTER_PASTE_H
+#include <sys/types.h>
+#include <assert.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <stdbool.h>
-#include <time.h>
+#include <kcgi.h>
 
-#define PASTE_DURATION_HOUR      3600           /* Seconds in one hour. */
-#define PASTE_DURATION_DAY       86400          /* Seconds in one day. */
-#define PASTE_DURATION_WEEK      604800         /* Seconds in one week. */
-#define PASTE_DURATION_MONTH     2592000        /* Rounded to 30 days. */
+#include "database.h"
+#include "page-new.h"
+#include "page.h"
+#include "paste.h"
 
-struct paste {
-	char *id;
-	char *title;
-	char *author;
-	char *language;
-	char *code;
-	time_t timestamp;
-	bool visible;
-	long long int duration;
-};
+static void
+get(struct kreq *req)
+{
+	struct paste paste = {0};
+
+	if (!database_get(&paste, req->path))
+		page(req, NULL, KHTTP_404, "404.html");
+	else {
+		page_new_render(req, &paste);
+		paste_finish(&paste);
+	}
+}
 
 void
-paste_finish(struct paste *);
-
-#endif /* !PASTER_PASTE_H */
+page_fork(struct kreq *req)
+{
+	switch (req->method) {
+	case KMETHOD_GET:
+		get(req);
+		break;
+	default:
+		page(req, NULL, KHTTP_400, "400.html");
+		break;
+	}
+}

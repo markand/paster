@@ -19,9 +19,16 @@
 #ifndef PASTER_UTIL_H
 #define PASTER_UTIL_H
 
+#include <stddef.h>
 #include <stdnoreturn.h>
+#include <time.h>
+
+#define NELEM(x) (sizeof (x) / sizeof (x)[0])
 
 struct tm;
+
+extern const char *languages[];
+extern const size_t languagesz;
 
 noreturn void
 die(const char *, ...);
@@ -34,5 +41,14 @@ bprintf(const char *, ...);
 
 const char *
 bstrftime(const char *, const struct tm *);
+
+const char *
+path(const char *);
+
+void
+replace(char **, const char *);
+
+const char *
+ttl(time_t, long long int);
 
 #endif /* !PASTER_UTIL_H */
