@@ -70,7 +70,7 @@ recents_one(void)
 		.author = estrdup("unit test"),
 		.language = estrdup("cpp"),
 		.code = estrdup("int main() {}"),
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = true
 	};
 
@@ -85,7 +85,7 @@ recents_one(void)
 	GREATEST_ASSERT_STR_EQ(pastes[0].author, "unit test");
 	GREATEST_ASSERT_STR_EQ(pastes[0].language, "cpp");
 	GREATEST_ASSERT_STR_EQ(pastes[0].code, "int main() {}");
-	GREATEST_ASSERT_EQ(pastes[0].duration, PASTE_HOUR);
+	GREATEST_ASSERT_EQ(pastes[0].duration, PASTE_DURATION_HOUR);
 	GREATEST_ASSERT(pastes[0].visible);
 	GREATEST_PASS();
 }
@@ -101,7 +101,7 @@ recents_hidden(void)
 		.author = estrdup("unit test"),
 		.language = estrdup("cpp"),
 		.code = estrdup("int main() {}"),
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = false
 	};
 
@@ -121,7 +121,7 @@ recents_many(void)
 	struct paste pastes[3];
 	size_t max = 3;
 	struct paste pastie = {
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = true
 	};
 
@@ -153,7 +153,7 @@ recents_many(void)
 		GREATEST_ASSERT_STR_EQ(pastes[i].language, "cpp");
 		GREATEST_ASSERT_STR_EQ(pastes[i].code,
 		    bprintf("int main() { return %d; }", expected[i]));
-		GREATEST_ASSERT_EQ(pastes[i].duration, PASTE_HOUR);
+		GREATEST_ASSERT_EQ(pastes[i].duration, PASTE_DURATION_HOUR);
 		GREATEST_ASSERT(pastes[i].visible);
 	};
 
@@ -167,7 +167,7 @@ recents_limits(void)
 	struct paste pastes[3];
 	size_t max = 3;
 	struct paste pastie = {
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = true
 	};
 
@@ -199,7 +199,7 @@ recents_limits(void)
 		GREATEST_ASSERT_STR_EQ(pastes[i].language, "cpp");
 		GREATEST_ASSERT_STR_EQ(pastes[i].code,
 		    bprintf("int main() { return %d; }", expected[i]));
-		GREATEST_ASSERT_EQ(pastes[i].duration, PASTE_HOUR);
+		GREATEST_ASSERT_EQ(pastes[i].duration, PASTE_DURATION_HOUR);
 		GREATEST_ASSERT(pastes[i].visible);
 	};
 
@@ -225,7 +225,7 @@ get_basic(void)
 		.author = estrdup("unit test"),
 		.language = estrdup("cpp"),
 		.code = estrdup("int main() {}"),
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = false
 	};
 	struct paste new = { 0 };
@@ -276,7 +276,7 @@ search_basic(void)
 			.author = estrdup("markand"),
 			.language = estrdup("cpp"),
 			.code = estrdup("int main(void) {}"),
-			.duration = PASTE_HOUR,
+			.duration = PASTE_DURATION_HOUR,
 			.visible = true
 		},
 		{
@@ -284,7 +284,7 @@ search_basic(void)
 			.author = estrdup("markand"),
 			.language = estrdup("shell"),
 			.code = estrdup("f() {}"),
-			.duration = PASTE_HOUR,
+			.duration = PASTE_DURATION_HOUR,
 			.visible = true
 		},
 		{
@@ -292,7 +292,7 @@ search_basic(void)
 			.author = estrdup("NiReaS"),
 			.language = estrdup("python"),
 			.code = estrdup("f: pass"),
-			.duration = PASTE_HOUR,
+			.duration = PASTE_DURATION_HOUR,
 			.visible = true
 		},
 	};
@@ -318,7 +318,7 @@ search_basic(void)
 	GREATEST_ASSERT_STR_EQ(searched[0].author, "markand");
 	GREATEST_ASSERT_STR_EQ(searched[0].language, "cpp");
 	GREATEST_ASSERT_STR_EQ(searched[0].code, "int main(void) {}");
-	GREATEST_ASSERT_EQ(searched[0].duration, PASTE_HOUR);
+	GREATEST_ASSERT_EQ(searched[0].duration, PASTE_DURATION_HOUR);
 	GREATEST_ASSERT(searched[0].visible);
 	GREATEST_PASS();
 }
@@ -332,7 +332,7 @@ search_notfound(void)
 		.author = estrdup("markand"),
 		.language = estrdup("cpp"),
 		.code = estrdup("int main(void) {}"),
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = true
 	};
 	size_t max = 1;
@@ -368,7 +368,7 @@ search_private(void)
 		.author = estrdup("anonymous"),
 		.language = estrdup("nohighlight"),
 		.code = estrdup("I love you, honey"),
-		.duration = PASTE_HOUR,
+		.duration = PASTE_DURATION_HOUR,
 		.visible = false
 	};
 	size_t max = 1;
@@ -433,7 +433,7 @@ clear_run(void)
 			.author = estrdup("NiReaS"),
 			.language = estrdup("python"),
 			.code = estrdup("f: pass"),
-			.duration = PASTE_HOUR,
+			.duration = PASTE_DURATION_HOUR,
 			.visible = true
 		},
 	};
@@ -463,7 +463,7 @@ clear_run(void)
 	GREATEST_ASSERT_STR_EQ(searched.author, "NiReaS");
 	GREATEST_ASSERT_STR_EQ(searched.language, "python");
 	GREATEST_ASSERT_STR_EQ(searched.code, "f: pass");
-	GREATEST_ASSERT_EQ(searched.duration, PASTE_HOUR);
+	GREATEST_ASSERT_EQ(searched.duration, PASTE_DURATION_HOUR);
 	GREATEST_ASSERT(searched.visible);
 	GREATEST_PASS();
 }

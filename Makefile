@@ -79,10 +79,10 @@ all: pasterd pasterd-clean paster
 -include ${CORE_DEPS} paster.d pasterd-clean.d
 
 .c.o:
-	${CC} ${MY_CFLAGS} -MMD -Iextern ${CFLAGS} -c $<
+	${CC} ${MY_CFLAGS} ${CFLAGS} -MMD -c $<
 
-.o:
-	${CC} $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS} ${LDFLAGS}
+.c:
+	${CC} ${MY_CFLAGS} ${CFLAGS} -MMD $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS} ${LDFLAGS}
 
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
