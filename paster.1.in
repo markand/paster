@@ -68,7 +68,7 @@ Sets the code snippet language, defaults to
 .Dq "nohighlight" .
 .It Fl d Ar duration
 Sets the paste lifetime, defaults to
-.Dq "month" .
+.Dq "day" .
 .It Fl t Ar title
 Sets a title to the paste, defaults to
 .Dq "Untitled" .

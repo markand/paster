@@ -19,7 +19,7 @@
 author="Anonymous"
 language="nohighlight"
 title="Untitled"
-duration="month"
+duration="day"
 public=0
 verbose=0
 

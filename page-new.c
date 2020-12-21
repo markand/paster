@@ -121,7 +121,8 @@ post(struct kreq *r)
 		.title          = estrdup("Untitled"),
 		.language       = estrdup("nohighlight"),
 		.code           = estrdup(""),
-		.visible        = true
+		.visible        = true,
+		.duration       = PASTE_DURATION_DAY
 	};
 
 	for (size_t i = 0; i < r->fieldsz; ++i) {
