@@ -84,6 +84,9 @@ all: pasterd pasterd-clean paster
 .c:
 	${CC} ${MY_CFLAGS} ${CFLAGS} -MMD $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS} ${LDFLAGS}
 
+.o:
+	${CC} ${MY_CFLAGS} ${CFLAGS} -MMD $< -o $@ ${CORE_LIB} ${SQLITE_LIB} ${MY_LDFLAGS} ${LDFLAGS}
+
 .in:
 	sed -e "s|@SHAREDIR@|${SHAREDIR}|" \
 	    -e "s|@VARDIR@|${VARDIR}|" \
