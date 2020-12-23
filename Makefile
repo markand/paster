@@ -31,23 +31,23 @@ VARDIR=         ${PREFIX}/var
 
 VERSION=        0.2.1
 
-CORE_SRCS=      config.c                \
-                database.c              \
-                http.c                  \
-                log.c                   \
-                fragment-duration.c     \
-                fragment-language.c     \
-                fragment-paste.c        \
-                fragment.c              \
-                page-download.c         \
-                page-fork.c             \
-                page-index.c            \
-                page-new.c              \
-                page-paste.c            \
-                page-search.c           \
-                page-static.c           \
-                page.c                  \
-                paste.c                 \
+CORE_SRCS=      config.c                        \
+                database.c                      \
+                http.c                          \
+                log.c                           \
+                fragment-duration.c             \
+                fragment-language.c             \
+                fragment-paste.c                \
+                fragment.c                      \
+                page-download.c                 \
+                page-fork.c                     \
+                page-index.c                    \
+                page-new.c                      \
+                page-paste.c                    \
+                page-search.c                   \
+                page-static.c                   \
+                page.c                          \
+                paste.c                         \
                 util.c
 CORE_HDRS=      ${CORE_SRCS:.c=.h}
 CORE_OBJS=      ${CORE_SRCS:.c=.o}
@@ -57,19 +57,21 @@ CORE_LIB=       libpaster.a
 TESTS_SRCS=     tests/test-database.c
 TESTS_OBJS=     ${TESTS_SRCS:.c=}
 
-SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0 \
-                -DSQLITE_OMIT_LOAD_EXTENSION \
-                -DSQLITE_OMIT_DEPRECATED \
+SQLITE_FLAGS=   -DSQLITE_THREADSAFE=0           \
+                -DSQLITE_OMIT_LOAD_EXTENSION    \
+                -DSQLITE_OMIT_DEPRECATED        \
                 -DSQLITE_DEFAULT_FOREIGN_KEYS=1
 SQLITE_LIB=     libsqlite3.a
 
-MY_CFLAGS=      -std=c11 \
-                -I. \
-                -Iextern \
-                -D_XOPEN_SOURCE=700 \
-                -DSHAREDIR=\"${SHAREDIR}\" \
-                -DVARDIR=\"${VARDIR}\"
-MY_LDFLAGS=     -lkcgi -lkcgihtml -lz
+MY_CFLAGS=      -std=c11                        \
+                -I .                            \
+                -I extern                       \
+                -D_XOPEN_SOURCE=700             \
+                -DSHAREDIR=\"${SHAREDIR}\"      \
+                -DVARDIR=\"${VARDIR}\"          \
+                `pkg-config --cflags kcgi-html`
+
+MY_LDFLAGS=     `pkg-config --libs kcgi-html`
 
 .SUFFIXES:
 .SUFFIXES: .o .c .in
