@@ -121,6 +121,7 @@ install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${MANDIR}/man1
 	cp paster ${DESTDIR}${BINDIR}
+	chmod 755 ${DESTDIR}${BINDIR}/paster
 	cp paster.1 ${DESTDIR}${MANDIR}/man1/paster.1
 
 install-pasterd:
