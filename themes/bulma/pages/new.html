@@ -1,0 +1,55 @@
+	<h1 class="title">Create paste</h1>
+
+	<form action="/new" method="post" enctype="multipart/form-data">
+		<div class="field">
+			<label class="label">Title</label>
+			<div class="control">
+				<input name="title" class="input" type="text" placeholder="Untitled">
+			</div>
+		</div>
+
+		<div class="field">
+			<label class="label">Author</label>
+			<div class="control">
+				<input name="author" class="input" type="text" placeholder="Anonymous">
+			</div>
+		</div>
+
+		<div class="field">
+			<label class="label">Language</label>
+			<div class="control">
+				<div class="select">
+					<select name="language">
+						@@languages@@
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<div class="field">
+			<label class="label">Duration</label>
+			<div class="control">
+				<div class="select">
+					<select name="duration">
+						@@durations@@
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<div class="field">
+			<label class="label">Visibility</label>
+			<label class="checkbox">
+			<input name="private" type="checkbox" checked>
+				Private
+			</label>
+		</div>
+
+		<textarea id="code" class="textarea" placeholder="What do you want to share?" rows="10" name="code"></textarea>
+
+		<div class="field">
+			<p class="control">
+				<button class="button is-success">Submit</button>
+			</p>
+		</div>
+	</form>
