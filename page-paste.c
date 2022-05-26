@@ -43,8 +43,8 @@ static const char *keywords[] = {
 	"expiration",
 	"id",
 	"language",
-	"title",
-	"visible"
+	"public",
+	"title"
 };
 
 static int
@@ -75,10 +75,10 @@ template(size_t keyword, void *arg)
 		khtml_puts(&html, tp->paste->language);
 		break;
 	case 6:
-		khtml_puts(&html, tp->paste->title);
+		khtml_puts(&html, bprintf(tp->paste->visible ? "Yes" : "No"));
 		break;
 	case 7:
-		khtml_puts(&html, bprintf(tp->paste->visible ? "Yes" : "No"));
+		khtml_puts(&html, tp->paste->title);
 		break;
 	default:
 		break;
