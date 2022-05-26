@@ -25,6 +25,6 @@
 #include <kcgi.h>
 
 void
-page(struct kreq *, const struct ktemplate *, enum khttp, const char *);
+page(struct kreq *, const struct ktemplate *, enum khttp, const char *, const char *);
 
 #endif /* !PASTER_PAGE_H */

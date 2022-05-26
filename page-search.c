@@ -64,7 +64,7 @@ get(struct kreq *r)
 		.arg = r
 	};
 
-	page(r, &kt, KHTTP_200, "pages/search.html");
+	page(r, &kt, KHTTP_200, "pages/search.html", "Search pastes");
 }
 
 static void
@@ -95,7 +95,7 @@ post(struct kreq *r)
 		author = NULL;
 
 	if (!database_search(pastes, &pastesz, title, author, language))
-		page(r, NULL, KHTTP_500, "pages/500.html");
+		page(r, NULL, KHTTP_500, "pages/500.html", "500");
 	else
 		page_index_render(r, pastes, pastesz);
 
@@ -116,7 +116,7 @@ page_search(struct kreq *r)
 		post(r);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html");
+		page(r, NULL, KHTTP_400, "pages/400.html", "400");
 		break;
 	}
 }

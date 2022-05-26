@@ -75,7 +75,7 @@ process(struct kreq *req)
 	log_debug("http: accessing page '%s'", req->path);
 
 	if (req->page == PAGE_LAST)
-		page(req, NULL, KHTTP_404, "pages/404.html");
+		page(req, NULL, KHTTP_404, "pages/404.html", "404");
 	else
 		handlers[req->page](req);
 }

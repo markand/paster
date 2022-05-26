@@ -33,7 +33,7 @@ get(struct kreq *r)
 	struct paste paste = {0};
 
 	if (!database_get(&paste, r->path))
-		page(r, NULL, KHTTP_404, "404.html");
+		page(r, NULL, KHTTP_404, "404.html", "404");
 	else {
 		khttp_head(r, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_APP_OCTET_STREAM]);
 #if 0
@@ -58,7 +58,7 @@ page_download(struct kreq *r)
 		get(r);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "400.html");
+		page(r, NULL, KHTTP_400, "400.html", "400");
 		break;
 	}
 }

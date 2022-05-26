@@ -19,13 +19,49 @@
 #include "page.h"
 #include "util.h"
 
-void
-page(struct kreq *req, const struct ktemplate *tmpl, enum khttp status, const char *file)
+struct template {
+	struct kreq *req;
+	const char *title;
+};
+
+static const char * const keywords[] = {
+	"title"
+};
+
+static int
+template(size_t keyword, void *arg)
 {
+	struct template *tp = arg;
+
+	switch (keyword) {
+	case 0:
+		khttp_printf(tp->req, "%s", tp->title);
+		break;
+	default:
+		break;
+	}
+
+	return 1;
+}
+
+void
+page(struct kreq *req, const struct ktemplate *tmpl, enum khttp status, const char *file, const char *title)
+{
+	struct template data = {
+		.req = req,
+		.title = title
+	};
+	struct ktemplate kt = {
+		.key = keywords,
+		.keysz = NELEM(keywords),
+		.arg = &data,
+		.cb = template
+	};
+
 	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
 	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[status]);
 	khttp_body(req);
-	khttp_template(req, NULL, path("fragments/header.html"));
+	khttp_template(req, &kt, path("fragments/header.html"));
 	khttp_template(req, tmpl, path(file));
 	khttp_template(req, NULL, path("fragments/footer.html"));
 	khttp_free(req);

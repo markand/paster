@@ -36,7 +36,7 @@ get(struct kreq *req)
 	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath);
 
 	if (stat(path, &st) < 0)
-		page(req, NULL, KHTTP_404, "pages/404.html");
+		page(req, NULL, KHTTP_404, "pages/404.html", "404");
 	else {
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[req->mime]);
@@ -58,7 +58,7 @@ page_static(struct kreq *r)
 		get(r);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html");
+		page(r, NULL, KHTTP_400, "pages/400.html", "400");
 		break;
 	}
 }

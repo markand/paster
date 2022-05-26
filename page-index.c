@@ -64,7 +64,7 @@ get(struct kreq *r)
 	size_t pastesz = NELEM(pastes);
 
 	if (!database_recents(pastes, &pastesz))
-		page(r, NULL, KHTTP_500, "pages/500.html");
+		page(r, NULL, KHTTP_500, "pages/500.html", "500");
 	else
 		page_index_render(r, pastes, pastesz);
 
@@ -88,7 +88,7 @@ page_index_render(struct kreq *r, const struct paste *pastes, size_t pastesz)
 		.cb = template
 	};
 
-	page(r, &kt, KHTTP_200, "pages/index.html");
+	page(r, &kt, KHTTP_200, "pages/index.html", "Recent pastes");
 }
 
 void
@@ -99,7 +99,7 @@ page_index(struct kreq *r)
 		get(r);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "400.html");
+		page(r, NULL, KHTTP_400, "400.html", "400");
 		break;
 	}
 }

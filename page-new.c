@@ -148,7 +148,7 @@ post(struct kreq *r)
 	}
 
 	if (!database_insert(&paste))
-		page(r, NULL, KHTTP_500, "500.html");
+		page(r, NULL, KHTTP_500, "500.html", "500");
 	else {
 		if (raw) {
 			/* For CLI users (e.g. paster) just print the location. */
@@ -184,7 +184,8 @@ page_new_render(struct kreq *r, const struct paste *paste)
 		.arg = &tp
 	};
 
-	page(r, &kt, KHTTP_200, "pages/new.html");
+	page(r, &kt, KHTTP_200, "pages/new.html",
+	    paste ? paste->title : "Create new paste");
 }
 
 void

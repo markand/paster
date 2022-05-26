@@ -35,7 +35,7 @@ get(struct kreq *req)
 	struct paste paste = {0};
 
 	if (!database_get(&paste, req->path))
-		page(req, NULL, KHTTP_404, "404.html");
+		page(req, NULL, KHTTP_404, "404.html", "404");
 	else {
 		page_new_render(req, &paste);
 		paste_finish(&paste);
@@ -50,7 +50,7 @@ page_fork(struct kreq *req)
 		get(req);
 		break;
 	default:
-		page(req, NULL, KHTTP_400, "400.html");
+		page(req, NULL, KHTTP_400, "400.html", "400");
 		break;
 	}
 }

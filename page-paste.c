@@ -99,7 +99,7 @@ get(struct kreq *r)
 	};
 
 	if (!database_get(&paste, r->path))
-		page(r, NULL, KHTTP_404, "pages/404.html");
+		page(r, NULL, KHTTP_404, "pages/404.html", "404");
 	else {
 		const struct ktemplate kt = {
 			.key = keywords,
@@ -108,7 +108,7 @@ get(struct kreq *r)
 			.arg = &data
 		};
 
-		page(r, &kt, KHTTP_200, "pages/paste.html");
+		page(r, &kt, KHTTP_200, "pages/paste.html", paste.title);
 		paste_finish(&paste);
 	}
 }
@@ -123,7 +123,7 @@ page_paste(struct kreq *r)
 		get(r);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html");
+		page(r, NULL, KHTTP_400, "pages/400.html", "400");
 		break;
 	}
 }
