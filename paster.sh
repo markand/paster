@@ -238,13 +238,16 @@ send()
 
 	if [ $verbose -eq 0 ]; then
 		with_verbose="-s"
+	else
+		with_verbose="-i"
 	fi
 
-	curl -i -X POST \
+	curl -L -X POST \
 		--data author="$author" \
 		--data language="$language" \
 		--data duration="$duration" \
 		--data title="$title" \
+		--data raw="on" \
 		--data-urlencode code@"$1" \
 		$with_private \
 		$with_verbose \
@@ -293,15 +296,4 @@ if [ "$#" -ne 2 ]; then
 	usage
 fi
 
-# If verbose, dump all headers.
-if [ $verbose -eq 1 ]; then
-	send "$1" "$2"
-else
-	url=$(send "$1" "$2" | grep -E "^Location: " | awk '{ print $2 }')
-
-	if [ -z "$url" ]; then
-		die "abort: error occured, retry with -v"
-	fi
-
-	printf "%s%s\n" "$2" "$url"
-fi
+send "$1" "$2"

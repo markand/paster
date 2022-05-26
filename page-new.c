@@ -124,6 +124,7 @@ post(struct kreq *r)
 		.visible        = true,
 		.duration       = PASTE_DURATION_DAY
 	};
+	int raw = 0;
 
 	for (size_t i = 0; i < r->fieldsz; ++i) {
 		const char *key = r->fields[i].key;
@@ -141,16 +142,29 @@ post(struct kreq *r)
 			paste.code = estrdup(val);
 		else if (strcmp(key, "private") == 0)
 			paste.visible = strcmp(val, "on") != 0;
+		else if (strcmp(key, "raw") == 0) {
+			raw = strcmp(val, "on") == 0;
+		}
 	}
 
 	if (!database_insert(&paste))
 		page(r, NULL, KHTTP_500, "500.html");
 	else {
-		/* Redirect to paste details. */
-		khttp_head(r, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
-		khttp_head(r, kresps[KRESP_LOCATION], "/paste/%s", paste.id);
-		khttp_body(r);
-		khttp_free(r);
+		if (raw) {
+			/* For CLI users (e.g. paster) just print the location. */
+			khttp_head(r, kresps[KRESP_STATUS], "%s", khttps[KHTTP_201]);
+			khttp_body(r);
+			khttp_printf(r, "%s://%s/paste/%s\n",
+			    r->scheme == KSCHEME_HTTP ? "http" : "https",
+			    r->host, paste.id);
+			khttp_free(r);
+		} else {
+			/* Otherwise, redirect to paste details. */
+			khttp_head(r, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
+			khttp_head(r, kresps[KRESP_LOCATION], "/paste/%s", paste.id);
+			khttp_body(r);
+			khttp_free(r);
+		}
 	}
 
 	paste_finish(&paste);
