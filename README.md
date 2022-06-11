@@ -1,7 +1,7 @@
 paster
 ======
 
-A minimalist pastebin service written in C18.
+A minimalist pastebin service written in C11.
 
 Documentation
 -------------

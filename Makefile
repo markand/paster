@@ -101,7 +101,7 @@ ${SQLITE_LIB}: extern/sqlite3.c extern/sqlite3.h
 ${CORE_LIB}: ${CORE_OBJS}
 	${AR} -rc $@ ${CORE_OBJS}
 
-pasterd.o: ${CORE_LIB} ${SQLITE_LIB} pasterd.8
+pasterd.o: ${CORE_LIB} ${SQLITE_LIB} pasterd.8 pasterd-themes.5
 
 pasterd-clean.o: ${CORE_LIB} ${SQLITE_LIB} pasterd-clean.8
 
@@ -120,9 +120,11 @@ clean:
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${MANDIR}/man1
+	mkdir -p ${DESTDIR}${MANDIR}/man5
 	cp paster ${DESTDIR}${BINDIR}
 	chmod 755 ${DESTDIR}${BINDIR}/paster
-	cp paster.1 ${DESTDIR}${MANDIR}/man1/paster.1
+	cp paster.1 ${DESTDIR}${MANDIR}/man1
+	cp pasterd-themes.5 ${DESTDIR}${MANDIR}/man5
 
 install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
