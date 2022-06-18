@@ -120,14 +120,13 @@ clean:
 install-paster:
 	mkdir -p ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${MANDIR}/man1
-	mkdir -p ${DESTDIR}${MANDIR}/man5
 	cp paster ${DESTDIR}${BINDIR}
 	chmod 755 ${DESTDIR}${BINDIR}/paster
 	cp paster.1 ${DESTDIR}${MANDIR}/man1
-	cp pasterd-themes.5 ${DESTDIR}${MANDIR}/man5
 
 install-pasterd:
 	mkdir -p ${DESTDIR}${BINDIR}
+	mkdir -p ${DESTDIR}${MANDIR}/man5
 	mkdir -p ${DESTDIR}${MANDIR}/man8
 	cp pasterd ${DESTDIR}${BINDIR}
 	cp pasterd-clean ${DESTDIR}${BINDIR}
@@ -135,6 +134,7 @@ install-pasterd:
 	cp -R themes ${DESTDIR}${SHAREDIR}/paster
 	cp pasterd.8 ${DESTDIR}${MANDIR}/man8
 	cp pasterd-clean.8 ${DESTDIR}${MANDIR}/man8
+	cp pasterd-themes.5 ${DESTDIR}${MANDIR}/man5
 
 install: install-pasterd install-paster
 

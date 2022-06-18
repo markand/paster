@@ -1,9 +1,3 @@
-# Build directory used in lots of documentation.
-^build
-
-# Qt Creator creates CMakeLists.txt.user.
-^CMakeLists\.txt\.user$
-
 # vim/emacs specific.
 ^tags$
 ^tags.lock$
@@ -20,10 +14,11 @@
 \.o$
 \.d$
 
-# Executables.
+# Manual pages.
+^paster(\.1)?$
 ^pasterd(\.8)?$
 ^pasterd-clean(\.8)?$
-^paster(\.1)?$
+^pasterd-themes(\.5)?$
 
 # Distribution files.
 ^paster-\d\.\d.\d\.tar\.xz(\.asc)?$
