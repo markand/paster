@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -54,7 +53,7 @@ quit(void)
 	log_finish();
 }
 
-static noreturn void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: paster [-fqv] [-d database-path] [-t theme-directory]\n");

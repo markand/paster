@@ -19,13 +19,12 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include <unistd.h>
 
 #include "database.h"
 #include "util.h"
 
-static noreturn void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: pasterd-clean [-d database-path]\n");

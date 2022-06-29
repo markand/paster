@@ -23,7 +23,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include <string.h>
 #include <time.h>
 
@@ -213,7 +212,7 @@ const char *languages[] = {
 
 const size_t languagesz = NELEM(languages);
 
-noreturn void
+void
 die(const char *fmt, ...)
 {
 	va_list ap;
