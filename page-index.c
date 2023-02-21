@@ -16,45 +16,25 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
-
-#include <kcgi.h>
 
 #include "database.h"
+#include "fmt-paste.h"
+#include "fmt.h"
 #include "fragment-paste.h"
 #include "page-index.h"
 #include "page.h"
 #include "paste.h"
 #include "util.h"
 
-struct template {
-	struct kreq *req;
-	const struct paste *pastes;
-	size_t pastesz;
-};
+#include "html/index.h"
 
-static const char *keywords[] = {
-	"pastes"
-};
-
-static int
-template(size_t keyword, void *arg)
+static void
+print_paste_table(struct kreq *req, struct khtmlreq *html, const void *data)
 {
-	struct template *tp = arg;
+	(void)html;
 
-	switch (keyword) {
-	case 0:
-		for (size_t i = 0; i < tp->pastesz; ++i)
-			fragment_paste(tp->req, &tp->pastes[i]);
-		break;
-	default:
-		break;
-	}
-
-	return 1;
+	fmt_paste_table(req, data);
 }
 
 static void
@@ -65,30 +45,29 @@ get(struct kreq *r)
 
 	if (!database_recents(pastes, &pastesz))
 		page(r, NULL, KHTTP_500, "pages/500.html", "500");
-	else
+	else {
 		page_index_render(r, pastes, pastesz);
 
-	for (size_t i = 0; i < pastesz; ++i)
-		paste_finish(&pastes[i]);
+		for (size_t i = 0; i < pastesz; ++i)
+			paste_finish(&pastes[i]);
+	}
 }
 
 void
 page_index_render(struct kreq *r, const struct paste *pastes, size_t pastesz)
 {
-	struct template data = {
-		.req = r,
+	assert(r);
+	assert(pastes);
+
+	struct fmt_paste_vec vec = {
 		.pastes = pastes,
 		.pastesz = pastesz
 	};
 
-	struct ktemplate kt = {
-		.key = keywords,
-		.keysz = NELEM(keywords),
-		.arg = &data,
-		.cb = template
-	};
-
-	page(r, &kt, KHTTP_200, "pages/index.html", "Recent pastes");
+	page2(r, KHTTP_200, "recent pastes", html_index, &vec, (const struct fmt_printer []) {
+		{ "paste-table",        print_paste_table       },
+		{ NULL,                 NULL                    }
+	});
 }
 
 void

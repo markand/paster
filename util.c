@@ -238,6 +238,17 @@ estrdup(const char *str)
 	return strcpy(ret, str);
 }
 
+void *
+ecalloc(size_t n, size_t w)
+{
+	void *ptr;
+
+	if (!(ptr = calloc(n, w)))
+		die(strerror(errno));
+
+	return ptr;
+}
+
 const char *
 bprintf(const char *fmt, ...)
 {

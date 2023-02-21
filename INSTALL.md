@@ -15,7 +15,7 @@ Basic installation
 
 Quick install.
 
-	$ tar xvzf paster-x.y.z-tar.xz
+	$ tar -xf paster-x.y.z-tar.xz
 	$ cd paster-x.y.z
 	$ make
 	# sudo make install

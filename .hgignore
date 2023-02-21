@@ -1,18 +1,21 @@
 # vim/emacs specific.
+\.swo$
+\.swp$
+^cscope\.out$
 ^tags$
 ^tags.lock$
 ^tags.temp$
-\.swp$
-\.swo$
 
 # macOS specific.
 \.DS_Store$
 
 # Temporary files.
+^extern/bcc/bcc$
 ^libpaster\.a$
 ^libsqlite3\.a$
 \.o$
 \.d$
+^html/.*\.h$
 
 # Manual pages.
 ^paster(\.1)?$
