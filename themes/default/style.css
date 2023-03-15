@@ -1,0 +1,131 @@
+@font-face {
+	font-family: titilliumweb;
+	src: url(/static/titilliumweb.ttf);
+}
+
+@font-face {
+	font-family: sourcecodepro;
+	src: url(/static/sourcecodepro.ttf);
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	font-family: titilliumweb;
+	color: #212121;
+}
+
+:root {
+	--main-color1: #254E70;
+	--main-color2: #37718E;
+	--main-color3: #8EE3EF;
+	--main-color4: #AEF3E7;
+	--main-color5: #C33C54;
+}
+
+a {
+	color: var(--main-color1);
+}
+
+a:hover {
+	color: var(--main-color2);
+}
+
+pre, code {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	background-color: gainsboro;
+	border-radius: 4px;
+	font-family: sourcecodepro;
+	letter-spacing: 0;
+	padding: 0.15em 0.25em 0.15em 0.25em;
+	color: #000000;
+}
+
+pre {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	border-left: 4px solid var(--main-color1);
+	box-shadow: #d9d9d9 0px 1px 4px;
+}
+
+#nav-links {
+	background-color: var(--main-color1);
+	list-style-type: none;
+	display: flex;
+}
+
+#nav .nav-link-brand {
+	font-weight: bold;
+}
+
+#nav a {
+	text-decoration: none;
+	color: #ffffff;
+	font-size: large;
+	display: block;
+	padding: 1em;
+}
+
+#nav a:hover {
+	background-color: var(--main-color2);
+}
+
+#container {
+	max-width: 768px;
+	margin: 0 auto;
+	margin-top: 1em;
+	padding: 1em;
+}
+
+/*
+ * Style for items on /paste.
+ */
+
+#paste-menu {
+	list-style-type: none;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+#paste-menu li {
+	display: inline-block;
+	background-color: var(--main-color2);
+	border-radius: 2px;
+}
+
+#paste-menu a {
+	color: #ffffff;
+	text-decoration: none;
+	padding: 0.5em;
+}
+
+#code {
+	max-width: 768px;
+	width: 100%;
+}
+
+.submit {
+	background-color: var(--main-color2);
+	color: #ffffff;
+	border: 0;
+	border-radius: 2px;
+	padding: 0.5em;
+	font-size: medium;
+}
+
+/*
+ * Other generic stuff.
+ */
+
+.label {
+	font-weight: bold;
+}
+
+td, th {
+	padding: 0.2em;
+}
+
+pre {
+	white-space: pre-line;
+}

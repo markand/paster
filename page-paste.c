@@ -42,13 +42,13 @@ create_expiration(const struct paste *paste)
 static inline json_t *
 create_pagetitle(const struct paste *paste)
 {
-	return json_sprintf("sci -- %s", paste->title);
+	return json_sprintf("paster -- %s", paste->title);
 }
 
 static inline json_t *
 create_paste(const struct paste *paste)
 {
-	return json_pack("{so ss ss ss ss ss so so}",
+	return json_pack("{so ss ss ss ss ss ss so so}",
 		"pagetitle",    create_pagetitle(paste),
 		"id",           paste->id,
 		"title",        paste->title,
@@ -57,7 +57,7 @@ create_paste(const struct paste *paste)
 		"code",         paste->code,
 		"public",       paste->visible ? "Yes" : "No",
 		"date",         create_date(paste),
-		"expliration",  create_expiration(paste)
+		"expiration",   create_expiration(paste)
 	);
 }
 

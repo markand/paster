@@ -3,17 +3,17 @@
 			<form action="/new" method="post">
 				<table>
 					<tr>
-						<td>Title</td>
+						<td class="label">Title</td>
 						<td><input name="title" type="text" placeholder="Untitled" value="{{title}}" /></td>
 					</tr>
 
 					<tr>
-						<td>Author</td>
+						<td class="label">Author</td>
 						<td><input name="author" type="text" placeholder="Anonymous" /></td>
 					</tr>
 
 					<tr>
-						<td>Language</td>
+						<td class="label">Language</td>
 						<td>
 							<select name="language">
 								{{#languages}}
@@ -24,7 +24,7 @@
 					</tr>
 
 					<tr>
-						<td>Expires in</td>
+						<td class="label">Expires in</td>
 						<td>
 							<select name="duration">
 								{{#durations}}
@@ -35,11 +35,12 @@
 					</tr>
 
 					<tr>
-						<td>Private</td>
+						<td class="label">Private</td>
 						<td><input type="checkbox" name="private" checked></input></td>
 					</tr>
 				</table>
 
 				<textarea id="code" class="textarea" placeholder="What do you want to share?" rows="10" name="code">{{code}}</textarea>
-				<button>Submit</button>
+				<br>
+				<input class="submit" type="submit" value="paste" />
 			</form>

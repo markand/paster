@@ -21,6 +21,7 @@
 
 #include <mustach-jansson.h>
 
+#include "config.h"
 #include "page.h"
 #include "util.h"
 

@@ -79,7 +79,7 @@ static inline json_t *
 create_doc(const struct paste *pastes, size_t pastesz)
 {
 	return json_pack("{ss so}",
-		"pagetitle",    "sci -- recent pastes",
+		"pagetitle",    "paster -- recent pastes",
 		"pastes",       create_pastes(pastes, pastesz)
 	);
 }

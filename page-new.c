@@ -161,7 +161,7 @@ page_new_render(struct kreq *req, const struct paste *paste)
 		paste = &paste_default;
 
 	page(req, KHTTP_200, html_new, json_pack("{ss ss so so ss}",
-		"pagetitle",    "sci -- new",
+		"pagetitle",    "paster -- create new paste",
 		"title",        paste->title,
 		"languages",    create_languages(paste),
 		"durations",    create_durations(),

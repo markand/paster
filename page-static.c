@@ -2,11 +2,11 @@
  * page-static.c -- page /static
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -33,7 +33,8 @@ get(struct kreq *req)
 	struct stat st;
 	char path[PATH_MAX];
 
-	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath);
+	/* Skip /static part that we don't want in the theme directory. */
+	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath + 7);
 
 	if (stat(path, &st) < 0)
 		page_status(req, KHTTP_404);
