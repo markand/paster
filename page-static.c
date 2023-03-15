@@ -36,7 +36,7 @@ get(struct kreq *req)
 	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath);
 
 	if (stat(path, &st) < 0)
-		page(req, NULL, KHTTP_404, "pages/404.html", "404");
+		page_status(req, KHTTP_404);
 	else {
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[req->mime]);
@@ -49,16 +49,16 @@ get(struct kreq *req)
 }
 
 void
-page_static(struct kreq *r)
+page_static(struct kreq *req)
 {
-	assert(r);
+	assert(req);
 
-	switch (r->method) {
+	switch (req->method) {
 	case KMETHOD_GET:
-		get(r);
+		get(req);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html", "400");
+		page_status(req, KHTTP_400);
 		break;
 	}
 }

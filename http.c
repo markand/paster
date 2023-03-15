@@ -75,7 +75,7 @@ process(struct kreq *req)
 	log_debug("http: accessing page '%s'", req->path);
 
 	if (req->page == PAGE_LAST)
-		page(req, NULL, KHTTP_404, "pages/404.html", "404");
+		page_status(req, KHTTP_404);
 	else
 		handlers[req->page](req);
 }
@@ -93,13 +93,4 @@ http_fcgi_run(void)
 		process(&req);
 
 	khttp_fcgi_free(fcgi);
-}
-
-void
-http_cgi_run(void)
-{
-	struct kreq req;
-
-	if (khttp_parse(&req, NULL, 0, pages, PAGE_LAST, 0) == KCGI_OK)
-		process(&req);
 }

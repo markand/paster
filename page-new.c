@@ -2,11 +2,11 @@
  * page-new.c -- page /new
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,34 +16,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <string.h>
 
-#include <kcgi.h>
-#include <kcgihtml.h>
-
 #include "database.h"
-#include "fragment-duration.h"
-#include "fragment-language.h"
 #include "paste.h"
 #include "page-new.h"
 #include "page.h"
 #include "util.h"
 
-struct template {
-	struct kreq *req;
-	const struct paste *paste;
-};
-
-static const char *keywords[] = {
-	"code",
-	"durations",
-	"languages",
-	"title"
-};
+#include "html/new.h"
 
 static const struct {
 	const char *title;
@@ -55,46 +37,13 @@ static const struct {
 	{ "month",      PASTE_DURATION_MONTH    },
 };
 
-static bool
-is_selected(const struct paste *paste, const char *language)
-{
-	return paste && strcmp(paste->language, language) == 0;
-}
-
-static int
-template(size_t keyword, void *arg)
-{
-	struct template *tp = arg;
-	struct khtmlreq html;
-
-	khtml_open(&html, tp->req, KHTML_PRETTY);
-
-	switch (keyword) {
-	case 0:
-		if (tp->paste)
-			khtml_puts(&html, tp->paste->code);
-		break;
-	case 1:
-		for (size_t i = 0; i < NELEM(durations); ++i)
-			fragment_duration(tp->req, durations[i].title);
-		break;
-	case 2:
-		for (size_t i = 0; i < languagesz; ++i)
-			fragment_language(tp->req, languages[i],
-			    is_selected(tp->paste, languages[i]));
-		break;
-	case 3:
-		if (tp->paste)
-			khtml_puts(&html, tp->paste->title);
-		break;
-	default:
-		break;
-	}
-
-	khtml_close(&html);
-
-	return 1;
-}
+static const struct paste paste_default = {
+	.id = "",
+	.title = "unknown",
+	.author = "anonymous",
+	.language = "nohighlight",
+	.code = ""
+};
 
 static long long int
 duration(const char *val)
@@ -148,7 +97,7 @@ post(struct kreq *r)
 	}
 
 	if (!database_insert(&paste))
-		page(r, NULL, KHTTP_500, "500.html", "500");
+		page_status(r,KHTTP_500);
 	else {
 		if (raw) {
 			/* For CLI users (e.g. paster) just print the location. */
@@ -170,35 +119,67 @@ post(struct kreq *r)
 	paste_finish(&paste);
 }
 
-void
-page_new_render(struct kreq *r, const struct paste *paste)
+static json_t *
+create_languages(const struct paste *paste)
 {
-	struct template tp = {
-		.req = r,
-		.paste = paste
-	};
-	struct ktemplate kt = {
-		.key = keywords,
-		.keysz = NELEM(keywords),
-		.cb = template,
-		.arg = &tp
-	};
+	json_t *array, *obj;
 
-	page(r, &kt, KHTTP_200, "pages/new.html",
-	    paste ? paste->title : "Create new paste");
+	array = json_array();
+
+	for (size_t i = 0; i < languagesz; ++i) {
+		if (strcmp(languages[i], paste->language) == 0)
+			obj = json_pack("{ss ss}",
+				"name",         languages[i],
+				"selected",     "selected"
+			);
+		else
+			obj = json_pack("{ss}", "name", languages[i]);
+
+		json_array_append_new(array, obj);
+	}
+
+	return array;
+}
+
+static inline json_t *
+create_durations(void)
+{
+	json_t *array = json_array();
+
+	for (size_t i = 0; i < NELEM(durations); ++i)
+		json_array_append_new(array, json_pack("{ss}", "value", durations[i].title));
+
+	return array;
 }
 
 void
-page_new(struct kreq *r)
+page_new_render(struct kreq *req, const struct paste *paste)
 {
-	assert(r);
+	assert(req);
 
-	switch (r->method) {
+	if (!paste)
+		paste = &paste_default;
+
+	page(req, KHTTP_200, html_new, json_pack("{ss ss so so ss}",
+		"pagetitle",    "sci -- new",
+		"title",        paste->title,
+		"languages",    create_languages(paste),
+		"durations",    create_durations(),
+		"code",         paste->code
+	));
+}
+
+void
+page_new(struct kreq *req)
+{
+	assert(req);
+
+	switch (req->method) {
 	case KMETHOD_GET:
-		get(r);
+		get(req);
 		break;
 	case KMETHOD_POST:
-		post(r);
+		post(req);
 		break;
 	default:
 		break;

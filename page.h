@@ -22,19 +22,15 @@
 #include <sys/types.h>
 #include <stdarg.h>
 #include <stdint.h>
+
+#include <jansson.h>
+
 #include <kcgi.h>
 
-struct fmt_printer;
+void
+page(struct kreq *req, enum khttp status, const unsigned char *html, json_t *doc);
 
 void
-page(struct kreq *, const struct ktemplate *, enum khttp, const char *, const char *);
-
-void
-page2(struct kreq *,
-      enum khttp,
-      const char *,
-      const unsigned char *,
-      const void *,
-      const struct fmt_printer *);
+page_status(struct kreq *req, enum khttp status);
 
 #endif /* !PASTER_PAGE_H */

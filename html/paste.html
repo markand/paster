@@ -1,7 +1,41 @@
-				<tr>
-					<td><a href="/paste/@@id@@">@@title@@</a></td>
-					<td>@@author@@</td>
-					<td>@@language@@</td>
-					<td>@@date@@</td>
-					<td>@@expiration@@</td>
-				</tr>
+	<h2>Actions</h2>
+	<ul>
+		<li><a href="/fork/{{id}}">Fork</a></li>
+		<li><a href="/download/{{id}}">Download</a></li>
+	</ul>
+
+	<table>
+		<tbody>
+			<tr>
+				<td>Identifier</td>
+				<td>{{id}}</td>
+			</tr>
+			<tr>
+				<td>Title</td>
+				<td>{{title}}</td>
+			</tr>
+			<tr>
+				<td>Author</td>
+				<td>{{author}}</td>
+			</tr>
+			<tr>
+				<td>Language</td>
+				<td>{{language}}</td>
+			</tr>
+			<tr>
+				<td>Date</td>
+				<td>{{date}}</td>
+			</tr>
+			<tr>
+				<td>Public</td>
+				<td>{{public}}</td>
+			</tr>
+			<tr>
+				<td>Expires in</td>
+				<td>{{expiration}}</td>
+			</tr>
+		</tbody>
+	</table>
+	<pre>
+{{code}}
+	</pre>

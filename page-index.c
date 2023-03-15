@@ -2,11 +2,11 @@
  * page-index.c -- page /
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -19,9 +19,6 @@
 #include <assert.h>
 
 #include "database.h"
-#include "fmt-paste.h"
-#include "fmt.h"
-#include "fragment-paste.h"
 #include "page-index.h"
 #include "page.h"
 #include "paste.h"
@@ -30,21 +27,13 @@
 #include "html/index.h"
 
 static void
-print_paste_table(struct kreq *req, struct khtmlreq *html, const void *data)
-{
-	(void)html;
-
-	fmt_paste_table(req, data);
-}
-
-static void
 get(struct kreq *r)
 {
 	struct paste pastes[10] = {0};
 	size_t pastesz = NELEM(pastes);
 
 	if (!database_recents(pastes, &pastesz))
-		page(r, NULL, KHTTP_500, "pages/500.html", "500");
+		page_status(r, KHTTP_500);
 	else {
 		page_index_render(r, pastes, pastesz);
 
@@ -53,32 +42,68 @@ get(struct kreq *r)
 	}
 }
 
-void
-page_index_render(struct kreq *r, const struct paste *pastes, size_t pastesz)
+static inline json_t *
+create_date(const struct paste *paste)
 {
-	assert(r);
-	assert(pastes);
+	return json_string(bstrftime("%c", localtime(&paste->timestamp)));
+}
 
-	struct fmt_paste_vec vec = {
-		.pastes = pastes,
-		.pastesz = pastesz
-	};
+static inline json_t *
+create_expiration(const struct paste *paste)
+{
+	return json_string(ttl(paste->timestamp, paste->duration));
+}
 
-	page2(r, KHTTP_200, "recent pastes", html_index, &vec, (const struct fmt_printer []) {
-		{ "paste-table",        print_paste_table       },
-		{ NULL,                 NULL                    }
-	});
+static inline json_t *
+create_pastes(const struct paste *pastes, size_t pastesz)
+{
+	json_t *array = json_array();
+	const struct paste *paste;
+
+	for (size_t i = 0; i < pastesz; ++i) {
+		paste = &pastes[i];
+
+		json_array_append_new(array, json_pack("{ss ss ss ss so so}",
+			"id",           paste->id,
+			"author",       paste->author,
+			"title",        paste->title,
+			"date",         create_date(paste),
+			"expiration",   create_expiration(paste)
+		));
+	}
+
+	return array;
+}
+
+static inline json_t *
+create_doc(const struct paste *pastes, size_t pastesz)
+{
+	return json_pack("{ss so}",
+		"pagetitle",    "sci -- recent pastes",
+		"pastes",       create_pastes(pastes, pastesz)
+	);
 }
 
 void
-page_index(struct kreq *r)
+page_index_render(struct kreq *req, const struct paste *pastes, size_t pastesz)
 {
-	switch (r->method) {
+	assert(req);
+	assert(pastes);
+
+	page(req, KHTTP_200, html_index, create_doc(pastes, pastesz));
+}
+
+void
+page_index(struct kreq *req)
+{
+	assert(req);
+
+	switch (req->method) {
 	case KMETHOD_GET:
-		get(r);
+		get(req);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "400.html", "400");
+		page_status(req, KHTTP_400);
 		break;
 	}
 }

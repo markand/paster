@@ -23,16 +23,16 @@
 .\" SYNOPSIS
 .Sh SYNOPSIS
 .Nm
-.Op Fl fqv
+.Op Fl qv
 .Op Fl d Ar database-path
 .Op Fl t Ar theme-directory
 .\" DESCRIPTION
 .Sh DESCRIPTION
 The
 .Nm
-utility is a simple CGI or FastCGI program to host code snippets over a web
-interface. It will show most recent public pastes and let users to create new
-one from a web form.
+utility is a simple FastCGI program to host code snippets over a web interface.
+It will show most recent public pastes and let users to create new one from a
+web form.
 .Pp
 It supports:
 .Bl -bullet -compat
@@ -55,10 +55,6 @@ below.
 .Pp
 Available options:
 .Bl -tag -width Ds
-.It Fl f
-Starts as FastCGI mode,
-.Nm
-will wait forever for new requests.
 .It Fl d Ar database-path
 Specify an alternate path for the database.
 .It Fl t Ar theme-directory

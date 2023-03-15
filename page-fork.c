@@ -2,11 +2,11 @@
  * page-fork.c -- page /fork/<id>
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,13 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <string.h>
-
-#include <kcgi.h>
 
 #include "database.h"
 #include "page-new.h"
@@ -35,7 +29,7 @@ get(struct kreq *req)
 	struct paste paste = {0};
 
 	if (!database_get(&paste, req->path))
-		page(req, NULL, KHTTP_404, "404.html", "404");
+		page_status(req, KHTTP_404);
 	else {
 		page_new_render(req, &paste);
 		paste_finish(&paste);
@@ -45,12 +39,14 @@ get(struct kreq *req)
 void
 page_fork(struct kreq *req)
 {
+	assert(req);
+
 	switch (req->method) {
 	case KMETHOD_GET:
 		get(req);
 		break;
 	default:
-		page(req, NULL, KHTTP_400, "400.html", "400");
+		page_status(req, KHTTP_400);
 		break;
 	}
 }

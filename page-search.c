@@ -16,69 +16,54 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
-#include <kcgi.h>
-
 #include "database.h"
-#include "fragment-language.h"
 #include "page-index.h"
 #include "page-search.h"
 #include "page.h"
 #include "paste.h"
 #include "util.h"
 
-static const char *keywords[] = {
-	"languages"
-};
+#include "html/search.h"
 
-static int
-template(size_t keyword, void *arg)
+static inline json_t *
+create_languages(void)
 {
-	struct kreq *r = arg;
+	json_t *array = json_array();
 
-	switch (keyword) {
-	case 0:
-		for (size_t i = 0; i < languagesz; ++i)
-			fragment_language(r, languages[i], false);
-		break;
-	default:
-		break;
-	}
+	for (size_t i = 0; i < languagesz; ++i)
+		json_array_append_new(array, json_pack("{ss ss}", "value", languages[i]));
 
-	return 1;
+	return array;
+}
+
+static inline json_t *
+create_root(void)
+{
+	return json_pack("{ss so}",
+		"pagetitle",    "paster -- search",
+		"languages",    create_languages()
+	);
 }
 
 static void
-get(struct kreq *r)
+get(struct kreq *req)
 {
-	struct ktemplate kt = {
-		.key = keywords,
-		.keysz = NELEM(keywords),
-		.cb = template,
-		.arg = r
-	};
-
-	page(r, &kt, KHTTP_200, "pages/search.html", "Search pastes");
+	page(req, KHTTP_200, html_search, create_root());
 }
 
 static void
-post(struct kreq *r)
+post(struct kreq *req)
 {
 	struct paste pastes[10] = {0};
 	size_t pastesz = NELEM(pastes);
-	const char *title = NULL;
-	const char *author = NULL;
-	const char *language = NULL;
+	const char *key, *val, *title = NULL, *author = NULL, *language = NULL;
 
-	for (size_t i = 0; i < r->fieldsz; ++i) {
-		const char *key = r->fields[i].key;
-		const char *val = r->fields[i].val;
+	for (size_t i = 0; i < req->fieldsz; ++i) {
+		key = req->fields[i].key;
+		val = req->fields[i].val;
 
 		if (strcmp(key, "title") == 0)
 			title = val;
@@ -95,28 +80,28 @@ post(struct kreq *r)
 		author = NULL;
 
 	if (!database_search(pastes, &pastesz, title, author, language))
-		page(r, NULL, KHTTP_500, "pages/500.html", "500");
+		page_status(req, KHTTP_500);
 	else
-		page_index_render(r, pastes, pastesz);
+		page_index_render(req, pastes, pastesz);
 
 	for (size_t i = 0; i < pastesz; ++i)
 		paste_finish(&pastes[i]);
 }
 
 void
-page_search(struct kreq *r)
+page_search(struct kreq *req)
 {
-	assert(r);
+	assert(req);
 
-	switch (r->method) {
+	switch (req->method) {
 	case KMETHOD_GET:
-		get(r);
+		get(req);
 		break;
 	case KMETHOD_POST:
-		post(r);
+		post(req);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html", "400");
+		page_status(req, KHTTP_400);
 		break;
 	}
 }

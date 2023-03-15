@@ -28,14 +28,14 @@ static const char *charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
 static char findentchar = '\t';
 static int findent = 1, fconst, fnull, fstatic;
 
-noreturn static void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: bcc [-0cs] [-I tab-indent] [-i space-indent] input variable\n");
 	exit(1);
 }
 
-noreturn static void
+static void
 die(const char *fmt, ...)
 {
 	va_list ap;

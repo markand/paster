@@ -2,11 +2,11 @@
  * page-paste.c -- page /paste/<id>
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,14 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-
-#include <kcgi.h>
-#include <kcgihtml.h>
 
 #include "database.h"
 #include "paste.h"
@@ -31,99 +24,67 @@
 #include "page.h"
 #include "util.h"
 
-struct template {
-	struct kreq *req;
-	struct paste *paste;
-};
+#include "html/paste.h"
 
-static const char *keywords[] = {
-	"author",
-	"code",
-	"date",
-	"expiration",
-	"id",
-	"language",
-	"public",
-	"title"
-};
-
-static int
-template(size_t keyword, void *arg)
+// TODO: share this.
+static inline json_t *
+create_date(const struct paste *paste)
 {
-	const struct template *tp = arg;
-	struct khtmlreq html;
+	return json_string(bstrftime("%c", localtime(&paste->timestamp)));
+}
 
-	khtml_open(&html, tp->req, KHTML_PRETTY);
+static inline json_t *
+create_expiration(const struct paste *paste)
+{
+	return json_string(ttl(paste->timestamp, paste->duration));
+}
 
-	switch (keyword) {
-	case 0:
-		khtml_puts(&html, tp->paste->author);
-		break;
-	case 1:
-		khtml_puts(&html, tp->paste->code);
-		break;
-	case 2:
-		khtml_puts(&html, bstrftime("%c", localtime(&tp->paste->timestamp)));
-		break;
-	case 3:
-		khtml_puts(&html, ttl(tp->paste->timestamp, tp->paste->duration));
-		break;
-	case 4:
-		khtml_puts(&html, tp->paste->id);
-		break;
-	case 5:
-		khtml_puts(&html, tp->paste->language);
-		break;
-	case 6:
-		khtml_puts(&html, bprintf(tp->paste->visible ? "Yes" : "No"));
-		break;
-	case 7:
-		khtml_puts(&html, tp->paste->title);
-		break;
-	default:
-		break;
-	}
+static inline json_t *
+create_pagetitle(const struct paste *paste)
+{
+	return json_sprintf("sci -- %s", paste->title);
+}
 
-	khtml_close(&html);
-
-	return 1;
+static inline json_t *
+create_paste(const struct paste *paste)
+{
+	return json_pack("{so ss ss ss ss ss so so}",
+		"pagetitle",    create_pagetitle(paste),
+		"id",           paste->id,
+		"title",        paste->title,
+		"author",       paste->author,
+		"language",     paste->language,
+		"code",         paste->code,
+		"public",       paste->visible ? "Yes" : "No",
+		"date",         create_date(paste),
+		"expliration",  create_expiration(paste)
+	);
 }
 
 static void
 get(struct kreq *r)
 {
 	struct paste paste = {0};
-	struct template data = {
-		.req = r,
-		.paste = &paste
-	};
 
 	if (!database_get(&paste, r->path))
-		page(r, NULL, KHTTP_404, "pages/404.html", "404");
+		page_status(r, KHTTP_404);
 	else {
-		const struct ktemplate kt = {
-			.key = keywords,
-			.keysz = NELEM(keywords),
-			.cb = template,
-			.arg = &data
-		};
-
-		page(r, &kt, KHTTP_200, "pages/paste.html", paste.title);
+		page(r, KHTTP_200, html_paste, create_paste(&paste));
 		paste_finish(&paste);
 	}
 }
 
 void
-page_paste(struct kreq *r)
+page_paste(struct kreq *req)
 {
-	assert(r);
+	assert(req);
 
-	switch (r->method) {
+	switch (req->method) {
 	case KMETHOD_GET:
-		get(r);
+		get(req);
 		break;
 	default:
-		page(r, NULL, KHTTP_400, "pages/400.html", "400");
+		page_status(req, KHTTP_400);
 		break;
 	}
 }
