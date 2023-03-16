@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include "database.h"
+#include "json-util.h"
 #include "page-index.h"
 #include "page.h"
 #include "paste.h"
@@ -43,18 +44,6 @@ get(struct kreq *r)
 }
 
 static inline json_t *
-create_date(const struct paste *paste)
-{
-	return json_string(bstrftime("%c", localtime(&paste->timestamp)));
-}
-
-static inline json_t *
-create_expiration(const struct paste *paste)
-{
-	return json_string(ttl(paste->timestamp, paste->duration));
-}
-
-static inline json_t *
 create_pastes(const struct paste *pastes, size_t pastesz)
 {
 	json_t *array = json_array();
@@ -67,8 +56,8 @@ create_pastes(const struct paste *pastes, size_t pastesz)
 			"id",           paste->id,
 			"author",       paste->author,
 			"title",        paste->title,
-			"date",         create_date(paste),
-			"expiration",   create_expiration(paste)
+			"date",         ju_date(paste),
+			"expiration",   ju_expiration(paste)
 		));
 	}
 

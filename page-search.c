@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "database.h"
+#include "json-util.h"
 #include "page-index.h"
 #include "page-search.h"
 #include "page.h"
@@ -29,22 +30,11 @@
 #include "html/search.h"
 
 static inline json_t *
-create_languages(void)
-{
-	json_t *array = json_array();
-
-	for (size_t i = 0; i < languagesz; ++i)
-		json_array_append_new(array, json_pack("{ss}", "value", languages[i]));
-
-	return array;
-}
-
-static inline json_t *
 create_root(void)
 {
 	return json_pack("{ss so}",
 		"pagetitle",    "paster -- search",
-		"languages",    create_languages()
+		"languages",    ju_languages(NULL)
 	);
 }
 

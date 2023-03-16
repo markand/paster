@@ -19,25 +19,13 @@
 #include <assert.h>
 
 #include "database.h"
-#include "paste.h"
+#include "json-util.h"
 #include "page-paste.h"
 #include "page.h"
+#include "paste.h"
 #include "util.h"
 
 #include "html/paste.h"
-
-// TODO: share this.
-static inline json_t *
-create_date(const struct paste *paste)
-{
-	return json_string(bstrftime("%c", localtime(&paste->timestamp)));
-}
-
-static inline json_t *
-create_expiration(const struct paste *paste)
-{
-	return json_string(ttl(paste->timestamp, paste->duration));
-}
 
 static inline json_t *
 create_pagetitle(const struct paste *paste)
@@ -56,8 +44,8 @@ create_paste(const struct paste *paste)
 		"language",     paste->language,
 		"code",         paste->code,
 		"public",       paste->visible ? "Yes" : "No",
-		"date",         create_date(paste),
-		"expiration",   create_expiration(paste)
+		"date",         ju_date(paste),
+		"expiration",   ju_expiration(paste)
 	);
 }
 

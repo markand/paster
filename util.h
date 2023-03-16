@@ -2,11 +2,11 @@
  * util.h -- various utilities
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -27,8 +27,16 @@
 struct tm;
 struct kreq;
 
-extern const char *languages[];
+struct duration {
+	const char *title;
+	long long int secs;
+};
+
+extern const char * const languages[];
 extern const size_t languagesz;
+
+extern const struct duration durations[];
+extern const size_t durationsz;
 
 void
 die(const char *, ...);

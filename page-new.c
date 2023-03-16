@@ -20,22 +20,13 @@
 #include <string.h>
 
 #include "database.h"
-#include "paste.h"
+#include "json-util.h"
 #include "page-new.h"
 #include "page.h"
+#include "paste.h"
 #include "util.h"
 
 #include "html/new.h"
-
-static const struct {
-	const char *title;
-	long long int secs;
-} durations[] = {
-	{ "day",        PASTE_DURATION_DAY      },
-	{ "hour",       PASTE_DURATION_HOUR     },
-	{ "week",       PASTE_DURATION_WEEK     },
-	{ "month",      PASTE_DURATION_MONTH    },
-};
 
 static const struct paste paste_default = {
 	.id = "",
@@ -48,7 +39,7 @@ static const struct paste paste_default = {
 static long long int
 duration(const char *val)
 {
-	for (size_t i = 0; i < NELEM(durations); ++i)
+	for (size_t i = 0; i < durationsz; ++i)
 		if (strcmp(val, durations[i].title) == 0)
 			return durations[i].secs;
 
@@ -119,39 +110,6 @@ post(struct kreq *r)
 	paste_finish(&paste);
 }
 
-static json_t *
-create_languages(const struct paste *paste)
-{
-	json_t *array, *obj;
-
-	array = json_array();
-
-	for (size_t i = 0; i < languagesz; ++i) {
-		if (strcmp(languages[i], paste->language) == 0)
-			obj = json_pack("{ss ss}",
-				"name",         languages[i],
-				"selected",     "selected"
-			);
-		else
-			obj = json_pack("{ss}", "name", languages[i]);
-
-		json_array_append_new(array, obj);
-	}
-
-	return array;
-}
-
-static inline json_t *
-create_durations(void)
-{
-	json_t *array = json_array();
-
-	for (size_t i = 0; i < NELEM(durations); ++i)
-		json_array_append_new(array, json_pack("{ss}", "value", durations[i].title));
-
-	return array;
-}
-
 void
 page_new_render(struct kreq *req, const struct paste *paste)
 {
@@ -163,8 +121,8 @@ page_new_render(struct kreq *req, const struct paste *paste)
 	page(req, KHTTP_200, html_new, json_pack("{ss ss so so ss}",
 		"pagetitle",    "paster -- create new paste",
 		"title",        paste->title,
-		"languages",    create_languages(paste),
-		"durations",    create_durations(),
+		"languages",    ju_languages(paste->language),
+		"durations",    ju_durations(),
 		"code",         paste->code
 	));
 }

@@ -48,6 +48,7 @@ LIBPASTER_SRCS +=       extern/libsqlite/sqlite3.c
 LIBPASTER_SRCS +=       config.c
 LIBPASTER_SRCS +=       database.c
 LIBPASTER_SRCS +=       http.c
+LIBPASTER_SRCS +=       json-util.c
 LIBPASTER_SRCS +=       log.c
 LIBPASTER_SRCS +=       page-download.c
 LIBPASTER_SRCS +=       page-fork.c
@@ -116,9 +117,9 @@ pasterd: private LDLIBS += $(KCGI_LIBS) $(JANSSON_LIBS)
 pasterd: $(LIBPASTER)
 
 clean:
-	rm -f extern/bcc/bcc
+	rm -f extern/bcc/bcc extern/bcc/bcc.d
 	rm -f $(LIBPASTER) $(LIBPASTER_OBJS) $(LIBPASTER_DEPS) $(LIBPASTER_HTML_OBJS)
-	rm -f paster pasterd
+	rm -f paster pasterd pasterd.d
 	rm -f test.db $(TESTS_OBJS)
 
 install-paster:

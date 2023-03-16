@@ -16,7 +16,9 @@
 				<td>Language</td>
 				<td>
 					<select name="language">
-						<option name="{{value}}">{{value}}</option>
+						{{#languages}}
+						<option name="{{name}}">{{name}}</option>
+						{{/languages}}
 					</select>
 				</td>
 			</tr>

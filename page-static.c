@@ -27,6 +27,18 @@
 #include "config.h"
 #include "page.h"
 
+static inline enum kmime
+mimetype(const struct kreq *req)
+{
+	switch (req->mime) {
+	case KMIME_TEXT_HTML:
+	case KMIME_TEXT_CSS:
+		return req->mime;
+	default:
+		return KMIME_APP_OCTET_STREAM;
+	}
+}
+
 static void
 get(struct kreq *req)
 {
@@ -40,7 +52,7 @@ get(struct kreq *req)
 		page_status(req, KHTTP_404);
 	else {
 		khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_200]);
-		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[req->mime]);
+		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[mimetype(req)]);
 		khttp_head(req, kresps[KRESP_CONTENT_LENGTH],
 		    "%llu", (unsigned long long)(st.st_size));
 		khttp_body(req);

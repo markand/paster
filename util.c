@@ -2,11 +2,11 @@
  * util.c -- various utilities
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -30,7 +30,7 @@
 #include "util.h"
 #include "paste.h"
 
-const char *languages[] = {
+const char * const languages[] = {
 	"nohighlight",
 	"1c",
 	"abnf",
@@ -211,6 +211,15 @@ const char *languages[] = {
 };
 
 const size_t languagesz = NELEM(languages);
+
+const struct duration durations[] = {
+	{ "day",        PASTE_DURATION_DAY      },
+	{ "hour",       PASTE_DURATION_HOUR     },
+	{ "week",       PASTE_DURATION_WEEK     },
+	{ "month",      PASTE_DURATION_MONTH    }
+};
+
+const size_t durationsz = NELEM(durations);
 
 void
 die(const char *fmt, ...)
