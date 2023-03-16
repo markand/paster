@@ -21,7 +21,6 @@
 
 #include "json-util.h"
 #include "util.h"
-#include "paste.h"
 
 json_t *
 ju_languages(const char *selected)
@@ -59,17 +58,84 @@ ju_durations(void)
 }
 
 json_t *
-ju_date(const struct paste *paste)
+ju_date(time_t timestamp)
 {
-	assert(paste);
-
-	return json_string(bstrftime("%c", localtime(&paste->timestamp)));
+	return json_string(bstrftime("%c", localtime(&timestamp)));
 }
 
 json_t *
-ju_expiration(const struct paste *paste)
+ju_expires(time_t timestamp, int duration)
 {
-	assert(paste);
+	return json_string(ttl(timestamp, duration));
+}
 
-	return json_string(ttl(paste->timestamp, paste->duration));
+const char *
+ju_get_string(const json_t *doc, const char *key)
+{
+	const json_t *val;
+
+	if (!doc || !(val = json_object_get(doc, key)) || !json_is_string(val))
+		return NULL;
+
+	return json_string_value(val);
+}
+
+intmax_t
+ju_get_int(const json_t *doc, const char *key)
+{
+	const json_t *val;
+
+	if (!doc || !(val = json_object_get(doc, key)) || !json_is_integer(val))
+		return 0;
+
+	return json_integer_value(val);
+}
+
+int
+ju_get_bool(const json_t *doc, const char *key)
+{
+	const json_t *val;
+
+	if (!doc || !(val = json_object_get(doc, key)) || !json_is_boolean(val))
+		return 0;
+
+	return json_boolean_value(val);
+}
+
+json_t *
+ju_paste_new(void)
+{
+	return json_pack("{ss ss ss ss si si}",
+		"title",        "Untitled",
+		"author",       "Anonymous",
+		"language",     "nohighlight",
+		"code",         "The best code is no code",
+		"visible",      0,
+		"duration",     PASTE_DURATION_HOUR
+	);
+}
+
+json_t *
+ju_extend(json_t *doc, const char *fmt, ...)
+{
+	assert(fmt);
+
+	json_t *ret, *val;
+	json_error_t err;
+	va_list ap;
+	const char *key;
+
+	va_start(ap, fmt);
+	ret = json_vpack_ex(&err, 0, fmt, ap);
+	va_end(ap);
+
+	/* Now steal every nodes from doc and put them in ret. */
+	if (doc) {
+		json_object_foreach(doc, key, val)
+			json_object_set(ret, key, val);
+
+		json_decref(doc);
+	}
+
+	return ret;
 }

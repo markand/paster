@@ -24,31 +24,26 @@
 #include "page-index.h"
 #include "page-search.h"
 #include "page.h"
-#include "paste.h"
 #include "util.h"
 
 #include "html/search.h"
 
-static inline json_t *
-create_root(void)
-{
-	return json_pack("{ss so}",
-		"pagetitle",    "paster -- search",
-		"languages",    ju_languages(NULL)
-	);
-}
+#define TITLE    "paster -- search"
+#define LIMIT    16
 
 static void
 get(struct kreq *req)
 {
-	page(req, KHTTP_200, html_search, create_root());
+	page(req, KHTTP_200, html_search, json_pack("{ss so}",
+		"pagetitle",    "paster -- search",
+		"languages",    ju_languages(NULL)
+	));
 }
 
 static void
 post(struct kreq *req)
 {
-	struct paste pastes[10] = {0};
-	size_t pastesz = NELEM(pastes);
+	json_t *pastes;
 	const char *key, *val, *title = NULL, *author = NULL, *language = NULL;
 
 	for (size_t i = 0; i < req->fieldsz; ++i) {
@@ -69,13 +64,10 @@ post(struct kreq *req)
 	if (author && strlen(author) == 0)
 		author = NULL;
 
-	if (!database_search(pastes, &pastesz, title, author, language))
+	if (!(pastes = database_search(16, title, author, language)))
 		page_status(req, KHTTP_500);
 	else
-		page_index_render(req, pastes, pastesz);
-
-	for (size_t i = 0; i < pastesz; ++i)
-		paste_finish(&pastes[i]);
+		page_index_render(req, pastes);
 }
 
 void

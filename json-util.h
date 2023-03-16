@@ -19,9 +19,10 @@
 #ifndef PASTER_PASTER_JSON_UTIL_H
 #define PASTER_PASTER_JSON_UTIL_H
 
-#include <jansson.h>
+#include <stdint.h>
+#include <time.h>
 
-struct paste;
+#include <jansson.h>
 
 /**
  * Create an array of all possible languages supported by the application. If
@@ -73,26 +74,40 @@ ju_durations(void);
 /**
  * Create a convenient ISO date string containing the paste creation date.
  *
- * \pre paste != NULL
- * \param paste this paste
+ * \param timestamp the timestamp
  * \return a string with an ISO date
  */
 json_t *
-ju_date(const struct paste *paste);
+ju_date(time_t timestamp);
 
 /**
- * Create a convenient remaining time for the given paste.
+ * Create a convenient remaining time for the given timestamp/duration.
  *
  * Returns strings in the form:
  *
  * - `2 day(s)`
  * - `3 hours(s)`
  *
- * \pre paste != NULL
- * \param paste this paste
+ * \param timestamp the timestamp
+ * \param duration the duration in seconds (e.g. 3600)
  * \return a string containing the expiration time
  */
 json_t *
-ju_expiration(const struct paste *paste);
+ju_expires(time_t timestamp, int duration);
+
+const char *
+ju_get_string(const json_t *, const char *);
+
+intmax_t
+ju_get_int(const json_t *, const char *);
+
+int
+ju_get_bool(const json_t *, const char *);
+
+json_t *
+ju_paste_new(void);
+
+json_t *
+ju_extend(json_t *doc, const char *fmt, ...);
 
 #endif /* !PASTER_PASTER_JSON_UTIL_H */

@@ -22,43 +22,53 @@
 #include "json-util.h"
 #include "page-paste.h"
 #include "page.h"
-#include "paste.h"
 #include "util.h"
 
 #include "html/paste.h"
 
 static inline json_t *
-create_pagetitle(const struct paste *paste)
+mk_pagetitle(const json_t *paste)
 {
-	return json_sprintf("paster -- %s", paste->title);
+	return json_sprintf("paster -- %s", ju_get_string(paste, "title"));
 }
 
 static inline json_t *
-create_paste(const struct paste *paste)
+mk_date(const json_t *paste)
 {
-	return json_pack("{so ss ss ss ss ss ss so so}",
-		"pagetitle",    create_pagetitle(paste),
-		"id",           paste->id,
-		"title",        paste->title,
-		"author",       paste->author,
-		"language",     paste->language,
-		"code",         paste->code,
-		"public",       paste->visible ? "Yes" : "No",
-		"date",         ju_date(paste),
-		"expiration",   ju_expiration(paste)
+	return ju_date(ju_get_int(paste, "timestamp"));
+}
+
+static inline json_t *
+mk_public(const json_t *paste)
+{
+	const intmax_t visible = ju_get_int(paste, "visible");
+
+	return json_string(visible ? "Yes" : "No");
+}
+
+static inline json_t *
+mk_expires(const json_t *paste)
+{
+	return ju_expires(
+	    ju_get_int(paste, "timestamp"),
+	    ju_get_int(paste, "duration")
 	);
 }
 
 static void
-get(struct kreq *r)
+get(struct kreq *req)
 {
-	struct paste paste = {0};
+	json_t *paste;
 
-	if (!database_get(&paste, r->path))
-		page_status(r, KHTTP_404);
+	if (!(paste = database_get(req->path)))
+		page_status(req, KHTTP_404);
 	else {
-		page(r, KHTTP_200, html_paste, create_paste(&paste));
-		paste_finish(&paste);
+		page(req, KHTTP_200, html_paste, ju_extend(paste, "{so so so so}",
+			"pagetitle",    mk_pagetitle(paste),
+			"date",         mk_date(paste),
+			"public",       mk_public(paste),
+			"expires",      mk_expires(paste)
+		));
 	}
 }
 

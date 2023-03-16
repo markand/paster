@@ -42,7 +42,7 @@ init(void)
 
 	if (!config.databasepath[0])
 		die("abort: no database specified\n");
-	if (!database_open(config.databasepath))
+	if (database_open(config.databasepath) < 0)
 		die("abort: could not open database\n");
 }
 

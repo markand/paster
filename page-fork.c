@@ -19,21 +19,19 @@
 #include <assert.h>
 
 #include "database.h"
+#include "json-util.h"
 #include "page-new.h"
 #include "page.h"
-#include "paste.h"
 
 static void
 get(struct kreq *req)
 {
-	struct paste paste = {0};
+	json_t *paste;
 
-	if (!database_get(&paste, req->path))
+	if (!(paste = database_get(req->path)))
 		page_status(req, KHTTP_404);
-	else {
-		page_new_render(req, &paste);
-		paste_finish(&paste);
-	}
+	else
+		page_new_render(req, paste);
 }
 
 void

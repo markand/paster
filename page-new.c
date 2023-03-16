@@ -23,18 +23,11 @@
 #include "json-util.h"
 #include "page-new.h"
 #include "page.h"
-#include "paste.h"
 #include "util.h"
 
 #include "html/new.h"
 
-static const struct paste paste_default = {
-	.id = "",
-	.title = "unknown",
-	.author = "anonymous",
-	.language = "nohighlight",
-	.code = ""
-};
+#define TITLE "paster -- create a new paste"
 
 static long long int
 duration(const char *val)
@@ -43,8 +36,8 @@ duration(const char *val)
 		if (strcmp(val, durations[i].title) == 0)
 			return durations[i].secs;
 
-	/* Default to month. */
-	return PASTE_DURATION_MONTH;
+	/* Default to day. */
+	return 60 * 60 * 24;
 }
 
 static void
@@ -54,76 +47,69 @@ get(struct kreq *r)
 }
 
 static void
-post(struct kreq *r)
+post(struct kreq *req)
 {
-	struct paste paste = {
-		.author         = estrdup("Anonymous"),
-		.title          = estrdup("Untitled"),
-		.language       = estrdup("nohighlight"),
-		.code           = estrdup(""),
-		.visible        = true,
-		.duration       = PASTE_DURATION_DAY
-	};
+	const char *key, *val, *id, *scheme;
+	json_t *paste;
 	int raw = 0;
 
-	for (size_t i = 0; i < r->fieldsz; ++i) {
-		const char *key = r->fields[i].key;
-		const char *val = r->fields[i].val;
+	paste = ju_paste_new();
 
-		if (strcmp(key, "title") == 0)
-			replace(&paste.title, val);
-		else if (strcmp(key, "author") == 0)
-			replace(&paste.author, val);
+	for (size_t i = 0; i < req->fieldsz; ++i) {
+		key = req->fields[i].key;
+		val = req->fields[i].val;
+
+		if (strcmp(key, "title") == 0 && strlen(val))
+			json_object_set_new(paste, "title", json_string(val));
+		else if (strcmp(key, "author") == 0 && strlen(val))
+			json_object_set_new(paste, "author", json_string(val));
 		else if (strcmp(key, "language") == 0)
-			replace(&paste.language, val);
+			json_object_set_new(paste, "language", json_string(val));
 		else if (strcmp(key, "duration") == 0)
-			paste.duration = duration(val);
+			json_object_set_new(paste, "duration", json_integer(duration(val)));
 		else if (strcmp(key, "code") == 0)
-			paste.code = estrdup(val);
-		else if (strcmp(key, "private") == 0)
-			paste.visible = strcmp(val, "on") != 0;
-		else if (strcmp(key, "raw") == 0) {
+			json_object_set_new(paste, "code", json_string(val));
+		else if (strcmp(key, "visible") == 0)
+			json_object_set_new(paste, "visible", json_boolean(strcmp(val, "on") == 0));
+		else if (strcmp(key, "raw") == 0)
 			raw = strcmp(val, "on") == 0;
-		}
 	}
 
-	if (!database_insert(&paste))
-		page_status(r,KHTTP_500);
+	if (database_insert(paste) < 0)
+		page_status(req, KHTTP_500);
 	else {
+		id = ju_get_string(paste, "id");
+		scheme = req->scheme == KSCHEME_HTTP ? "http" : "https";
+
 		if (raw) {
 			/* For CLI users (e.g. paster) just print the location. */
-			khttp_head(r, kresps[KRESP_STATUS], "%s", khttps[KHTTP_201]);
-			khttp_body(r);
-			khttp_printf(r, "%s://%s/paste/%s\n",
-			    r->scheme == KSCHEME_HTTP ? "http" : "https",
-			    r->host, paste.id);
-			khttp_free(r);
+			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_201]);
+			khttp_body(req);
+			khttp_printf(req, "%s://%s/paste/%s\n", scheme, req->host, id);
 		} else {
 			/* Otherwise, redirect to paste details. */
-			khttp_head(r, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
-			khttp_head(r, kresps[KRESP_LOCATION], "/paste/%s", paste.id);
-			khttp_body(r);
-			khttp_free(r);
+			khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[KHTTP_302]);
+			khttp_head(req, kresps[KRESP_LOCATION], "/paste/%s", id);
+			khttp_body(req);
 		}
+
+		khttp_free(req);
 	}
 
-	paste_finish(&paste);
+	json_decref(paste);
 }
 
+#include "log.h"
+
 void
-page_new_render(struct kreq *req, const struct paste *paste)
+page_new_render(struct kreq *req, json_t *paste)
 {
 	assert(req);
 
-	if (!paste)
-		paste = &paste_default;
-
-	page(req, KHTTP_200, html_new, json_pack("{ss ss so so ss}",
-		"pagetitle",    "paster -- create new paste",
-		"title",        paste->title,
-		"languages",    ju_languages(paste->language),
-		"durations",    ju_durations(),
-		"code",         paste->code
+	page(req, KHTTP_200, html_new, ju_extend(paste, "{ss so so}",
+		"pagetitle", TITLE,
+		"durations", ju_durations(),
+		"languages", ju_languages(ju_get_string(paste, "language"))
 	));
 }
 

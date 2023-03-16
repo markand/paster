@@ -58,7 +58,6 @@ LIBPASTER_SRCS +=       page-paste.c
 LIBPASTER_SRCS +=       page-search.c
 LIBPASTER_SRCS +=       page-static.c
 LIBPASTER_SRCS +=       page.c
-LIBPASTER_SRCS +=       paste.c
 LIBPASTER_SRCS +=       util.c
 LIBPASTER_OBJS :=       $(LIBPASTER_SRCS:.c=.o)
 LIBPASTER_DEPS :=       $(LIBPASTER_SRCS:.c=.d)
@@ -72,6 +71,14 @@ LIBPASTER_HTML_SRCS +=  html/paste.html
 LIBPASTER_HTML_SRCS +=  html/search.html
 LIBPASTER_HTML_SRCS +=  html/status.html
 LIBPASTER_HTML_OBJS :=  $(LIBPASTER_HTML_SRCS:.html=.h)
+
+LIBPASTER_SQL_SRCS :=   sql/clear.sql
+LIBPASTER_SQL_SRCS +=   sql/get.sql
+LIBPASTER_SQL_SRCS +=   sql/init.sql
+LIBPASTER_SQL_SRCS +=   sql/insert.sql
+LIBPASTER_SQL_SRCS +=   sql/recents.sql
+LIBPASTER_SQL_SRCS +=   sql/search.sql
+LIBPASTER_SQL_OBJS :=   $(LIBPASTER_SQL_SRCS:.sql=.h)
 
 TESTS_SRCS :=           tests/test-database.c
 TESTS_OBJS :=           $(TESTS_SRCS:.c=.o)
@@ -103,6 +110,9 @@ all: pasterd paster
 %.h: %.html
 	$(BCC) -cs0 $< html_${<F} > $@
 
+%.h: %.sql
+	$(BCC) -cs0 $< sql_${<F} > $@
+
 %: %.sh
 	$(SED) < $< > $@
 
@@ -110,7 +120,7 @@ all: pasterd paster
 	$(AR) -rc $@ $^
 
 $(LIBPASTER_HTML_OBJS): extern/bcc/bcc
-$(LIBPASTER_SRCS): $(LIBPASTER_HTML_OBJS)
+$(LIBPASTER_SRCS): $(LIBPASTER_HTML_OBJS) $(LIBPASTER_SQL_OBJS)
 $(LIBPASTER): $(LIBPASTER_OBJS)
 
 pasterd: private LDLIBS += $(KCGI_LIBS) $(JANSSON_LIBS)
@@ -118,7 +128,7 @@ pasterd: $(LIBPASTER)
 
 clean:
 	rm -f extern/bcc/bcc extern/bcc/bcc.d
-	rm -f $(LIBPASTER) $(LIBPASTER_OBJS) $(LIBPASTER_DEPS) $(LIBPASTER_HTML_OBJS)
+	rm -f $(LIBPASTER) $(LIBPASTER_OBJS) $(LIBPASTER_DEPS) $(LIBPASTER_HTML_OBJS) $(LIBPASTER_SQL_OBJS)
 	rm -f paster pasterd pasterd.d
 	rm -f test.db $(TESTS_OBJS)
 

@@ -22,64 +22,34 @@
 #include "json-util.h"
 #include "page-index.h"
 #include "page.h"
-#include "paste.h"
 #include "util.h"
 
 #include "html/index.h"
 
+#define LIMIT 16
+#define TITLE "paster -- recent pastes"
+
 static void
-get(struct kreq *r)
+get(struct kreq *req)
 {
-	struct paste pastes[10] = {0};
-	size_t pastesz = NELEM(pastes);
+	json_t *pastes;
 
-	if (!database_recents(pastes, &pastesz))
-		page_status(r, KHTTP_500);
-	else {
-		page_index_render(r, pastes, pastesz);
-
-		for (size_t i = 0; i < pastesz; ++i)
-			paste_finish(&pastes[i]);
-	}
-}
-
-static inline json_t *
-create_pastes(const struct paste *pastes, size_t pastesz)
-{
-	json_t *array = json_array();
-	const struct paste *paste;
-
-	for (size_t i = 0; i < pastesz; ++i) {
-		paste = &pastes[i];
-
-		json_array_append_new(array, json_pack("{ss ss ss ss so so}",
-			"id",           paste->id,
-			"author",       paste->author,
-			"title",        paste->title,
-			"date",         ju_date(paste),
-			"expiration",   ju_expiration(paste)
-		));
-	}
-
-	return array;
-}
-
-static inline json_t *
-create_doc(const struct paste *pastes, size_t pastesz)
-{
-	return json_pack("{ss so}",
-		"pagetitle",    "paster -- recent pastes",
-		"pastes",       create_pastes(pastes, pastesz)
-	);
+	if (!(pastes = database_recents(LIMIT)))
+		page_status(req, KHTTP_500);
+	else
+		page_index_render(req, pastes);
 }
 
 void
-page_index_render(struct kreq *req, const struct paste *pastes, size_t pastesz)
+page_index_render(struct kreq *req, json_t *pastes)
 {
 	assert(req);
 	assert(pastes);
 
-	page(req, KHTTP_200, html_index, create_doc(pastes, pastesz));
+	page(req, KHTTP_200, html_index, json_pack("{ss so}",
+		"title",        TITLE,
+		"pastes",       pastes
+	));
 }
 
 void

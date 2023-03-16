@@ -28,7 +28,6 @@
 
 #include "config.h"
 #include "util.h"
-#include "paste.h"
 
 const char * const languages[] = {
 	"nohighlight",

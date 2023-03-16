@@ -19,33 +19,79 @@
 #ifndef PASTER_DATABASE_H
 #define PASTER_DATABASE_H
 
-#include <stdbool.h>
 #include <stddef.h>
 
-struct paste;
+#include <jansson.h>
 
-bool
-database_open(const char *);
+/**
+ * Open the database specified by path.
+ *
+ * \pre path != NULL
+ * \param path path to the SQLite file
+ * \return 0 on success or -1 on error
+ */
+int
+database_open(const char *path);
 
-bool
-database_recents(struct paste *, size_t *);
+/**
+ * Obtain a list of recent pastes.
+ *
+ * \param limit max number of items to fetch
+ * \return a JSON array of paste objects or NULL on failure
+ */
+json_t *
+database_recents(size_t limit);
 
-bool
-database_get(struct paste *, const char *);
+/**
+ * Obtain a specific paste by id.
+ *
+ * \pre id != NULL
+ * \param id the paste identifier
+ * \return NULL on failure or if not found
+ */
+json_t *
+database_get(const char *id);
 
-bool
-database_insert(struct paste *);
+/**
+ * Insert a new paste into the database.
+ *
+ * On insertion, the paste gets a new string "id" property generated from the
+ * database.
+ *
+ * \pre paste != NULL
+ * \param paste the paste object
+ * \return 0 on success or -1 on failure
+ */
+int
+database_insert(json_t *paste);
 
-bool
-database_search(struct paste *,
-                size_t *,
-                const char *,
-                const char *,
-                const char *);
+/**
+ * Search for pastes based on criterias.
+ *
+ * If any of the criterias is NULL it is considered as ignored (and then match a
+ * database item).
+ *
+ * \param limit max number of items to fetch
+ * \param title paste title (or NULL to match any)
+ * \param author paste author (or NULL to match any)
+ * \param language paste language (or NULL to match any)
+ * \return a JSON array of objects or NULL on failure
+ */
+json_t *
+database_search(size_t limit,
+                const char *title,
+                const char *author,
+                const char *language);
 
+/**
+ * Cleanup expired pastes.
+ */
 void
 database_clear(void);
 
+/**
+ * Close the database handle
+ */
 void
 database_finish(void);
 

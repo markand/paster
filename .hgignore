@@ -18,6 +18,7 @@
 ^config\.mk$
 ^extern/bcc/bcc$
 ^html/.*\.h$
+^sql/.*\.h$
 ^libpaster\.a$
 
 # Executables.
