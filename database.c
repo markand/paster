@@ -37,8 +37,6 @@
 
 #define CHAR(sql) (const char *)(sql)
 
-static sqlite3 *db;
-
 static char *
 dup(const unsigned char *s)
 {
@@ -59,14 +57,14 @@ convert(sqlite3_stmt *stmt, struct paste *paste)
 }
 
 static int
-exists(const char *id)
+exists(struct database *db, const char *id)
 {
 	assert(id);
 
 	sqlite3_stmt *stmt = NULL;
 	int ret = 1;
 
-	if (sqlite3_prepare(db, CHAR(sql_get), -1, &stmt, NULL) == SQLITE_OK) {
+	if (sqlite3_prepare(db->handle, CHAR(sql_get), -1, &stmt, NULL) == SQLITE_OK) {
 		sqlite3_bind_text(stmt, 1, id, -1, NULL);
 		ret = sqlite3_step(stmt) == SQLITE_ROW;
 		sqlite3_finalize(stmt);
@@ -88,7 +86,7 @@ create_id(void)
 }
 
 static int
-set_id(struct paste *paste)
+set_id(struct database *db, struct paste *paste)
 {
 	assert(paste);
 
@@ -105,28 +103,31 @@ set_id(struct paste *paste)
 	do {
 		free(paste->id);
 		paste->id = estrdup(create_id());
-	} while (++tries < 30 && exists(paste->id));
+	} while (++tries < 30 && exists(db, paste->id));
 
 	return tries < 30 ? 0 : -1;
 }
 
+struct database database;
+
 int
-database_open(const char *path)
+database_open(struct database *db, const char *path)
 {
+	assert(db);
 	assert(path);
 
 	log_info("database: opening %s", path);
 
-	if (sqlite3_open(path, &db) != SQLITE_OK) {
-		log_warn("database: unable to open %s: %s", path, sqlite3_errmsg(db));
+	if (sqlite3_open(path, (sqlite3 **)&db->handle) != SQLITE_OK) {
+		log_warn("database: unable to open %s: %s", path, sqlite3_errmsg(db->handle));
 		return -1;
 	}
 
 	/* Wait for 30 seconds to lock the database. */
-	sqlite3_busy_timeout(db, 30000);
+	sqlite3_busy_timeout(db->handle, 30000);
 
-	if (sqlite3_exec(db, CHAR(sql_init), NULL, NULL, NULL) != SQLITE_OK) {
-		log_warn("database: unable to initialize %s: %s", path, sqlite3_errmsg(db));
+	if (sqlite3_exec(db->handle, CHAR(sql_init), NULL, NULL, NULL) != SQLITE_OK) {
+		log_warn("database: unable to initialize %s: %s", path, sqlite3_errmsg(db->handle));
 		return -1;
 	}
 
@@ -134,8 +135,9 @@ database_open(const char *path)
 }
 
 int
-database_recents(struct paste *pastes, size_t *max)
+database_recents(struct database *db, struct paste *pastes, size_t *max)
 {
+	assert(db);
 	assert(pastes);
 	assert(max);
 
@@ -145,7 +147,7 @@ database_recents(struct paste *pastes, size_t *max)
 	memset(pastes, 0, *max * sizeof (struct paste));
 	log_debug("database: accessing most recents");
 
-	if (sqlite3_prepare(db, CHAR(sql_recents), -1, &stmt, NULL) != SQLITE_OK ||
+	if (sqlite3_prepare(db->handle, CHAR(sql_recents), -1, &stmt, NULL) != SQLITE_OK ||
 	    sqlite3_bind_int64(stmt, 1, *max) != SQLITE_OK)
 		goto sqlite_err;
 
@@ -159,7 +161,7 @@ database_recents(struct paste *pastes, size_t *max)
 	return 0;
 
 sqlite_err:
-	log_warn("database: error (recents): %s\n", sqlite3_errmsg(db));
+	log_warn("database: error (recents): %s\n", sqlite3_errmsg(db->handle));
 
 	if (stmt)
 		sqlite3_finalize(stmt);
@@ -170,8 +172,9 @@ sqlite_err:
 }
 
 int
-database_get(struct paste *paste, const char *id)
+database_get(struct database *db, struct paste *paste, const char *id)
 {
+	assert(db);
 	assert(paste);
 	assert(id);
 
@@ -181,7 +184,7 @@ database_get(struct paste *paste, const char *id)
 	memset(paste, 0, sizeof (struct paste));
 	log_debug("database: accessing paste with id: %s", id);
 
-	if (sqlite3_prepare(db, CHAR(sql_get), -1, &stmt, NULL) != SQLITE_OK ||
+	if (sqlite3_prepare(db->handle, CHAR(sql_get), -1, &stmt, NULL) != SQLITE_OK ||
 	    sqlite3_bind_text(stmt, 1, id, -1, NULL) != SQLITE_OK)
 		goto sqlite_err;
 
@@ -205,30 +208,31 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	log_warn("database: error (get): %s", sqlite3_errmsg(db));
+	log_warn("database: error (get): %s", sqlite3_errmsg(db->handle));
 
 	return -1;
 }
 
 int
-database_insert(struct paste *paste)
+database_insert(struct database *db, struct paste *paste)
 {
+	assert(db);
 	assert(paste);
 
 	sqlite3_stmt *stmt = NULL;
 
 	log_debug("database: creating new paste");
 
-	if (sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL) != SQLITE_OK) {
-		log_warn("database: could not lock database: %s", sqlite3_errmsg(db));
+	if (sqlite3_exec(db->handle, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL) != SQLITE_OK) {
+		log_warn("database: could not lock database: %s", sqlite3_errmsg(db->handle));
 		return -1;
 	}
-	if (set_id(paste) < 0) {
+	if (set_id(db, paste) < 0) {
 		log_warn("database: unable to randomize unique identifier");
-		sqlite3_exec(db, "END TRANSACTION", NULL, NULL, NULL);
+		sqlite3_exec(db->handle, "END TRANSACTION", NULL, NULL, NULL);
 		return -1;
 	}
-	if (sqlite3_prepare(db, CHAR(sql_insert), -1, &stmt, NULL) != SQLITE_OK)
+	if (sqlite3_prepare(db->handle, CHAR(sql_insert), -1, &stmt, NULL) != SQLITE_OK)
 		goto sqlite_err;
 
 	sqlite3_bind_text(stmt, 1, paste->id, -1, SQLITE_STATIC);
@@ -242,7 +246,7 @@ database_insert(struct paste *paste)
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		goto sqlite_err;
 
-	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+	sqlite3_exec(db->handle, "COMMIT", NULL, NULL, NULL);
 	sqlite3_finalize(stmt);
 
 	log_info("database: new paste (%s) from %s expires in one %lld seconds",
@@ -251,8 +255,8 @@ database_insert(struct paste *paste)
 	return 0;
 
 sqlite_err:
-	log_warn("database: error (insert): %s", sqlite3_errmsg(db));
-	sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+	log_warn("database: error (insert): %s", sqlite3_errmsg(db->handle));
+	sqlite3_exec(db->handle, "ROLLBACK", NULL, NULL, NULL);
 
 	if (stmt)
 		sqlite3_finalize(stmt);
@@ -264,12 +268,14 @@ sqlite_err:
 }
 
 int
-database_search(struct paste *pastes,
+database_search(struct database *db,
+                struct paste *pastes,
                 size_t *max,
                 const char *title,
                 const char *author,
                 const char *language)
 {
+	assert(db);
 	assert(pastes);
 	assert(max);
 
@@ -288,7 +294,7 @@ database_search(struct paste *pastes,
 	author   = author   ? author   : "%";
 	language = language ? language : "%";
 
-	if (sqlite3_prepare(db, CHAR(sql_search), -1, &stmt, NULL) != SQLITE_OK)
+	if (sqlite3_prepare(db->handle, CHAR(sql_search), -1, &stmt, NULL) != SQLITE_OK)
 		goto sqlite_err;
 	if (sqlite3_bind_text(stmt, 1, title, -1, NULL) != SQLITE_OK)
 		goto sqlite_err;
@@ -309,7 +315,7 @@ database_search(struct paste *pastes,
 	return 0;
 
 sqlite_err:
-	log_warn("database: error (search): %s\n", sqlite3_errmsg(db));
+	log_warn("database: error (search): %s\n", sqlite3_errmsg(db->handle));
 
 	if (stmt)
 		sqlite3_finalize(stmt);
@@ -320,21 +326,22 @@ sqlite_err:
 }
 
 void
-database_clear(void)
+database_clear(struct database *db)
 {
+	assert(db);
+
 	log_debug("database: clearing deprecated pastes");
 
-	if (sqlite3_exec(db, CHAR(sql_clear), NULL, NULL, NULL) != SQLITE_OK)
-		log_warn("database: error (clear): %s\n", sqlite3_errmsg(db));
+	if (sqlite3_exec(db->handle, CHAR(sql_clear), NULL, NULL, NULL) != SQLITE_OK)
+		log_warn("database: error (clear): %s\n", sqlite3_errmsg(db->handle));
 }
 
 void
-database_finish(void)
+database_finish(struct database *db)
 {
-	log_debug("database: closing");
+	assert(db);
 
-	if (db) {
-		sqlite3_close(db);
-		db = NULL;
-	}
+	log_debug("database: closing");
+	sqlite3_close(db->handle);
+	db->handle = NULL;
 }

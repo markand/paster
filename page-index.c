@@ -106,7 +106,7 @@ get(struct kreq *req)
 	struct paste pastes[LIMIT];
 	size_t pastesz = NELEM(pastes);
 
-	if (database_recents(pastes, &pastesz) < 0)
+	if (database_recents(&database, pastes, &pastesz) < 0)
 		page_status(req, KHTTP_500);
 	else {
 		page_index_render(req, pastes, pastesz);

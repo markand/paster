@@ -28,7 +28,7 @@ get(struct kreq *req)
 {
 	struct paste paste;
 
-	if (database_get(&paste, req->path) < 0)
+	if (database_get(&database, &paste, req->path) < 0)
 		page_status(req, KHTTP_404);
 	else {
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_APP_OCTET_STREAM]);

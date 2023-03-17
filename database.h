@@ -23,29 +23,41 @@
 
 struct paste;
 
-int
-database_open(const char *);
+struct database {
+	void *handle;
+};
+
+/**
+ * Global database handle for convenience.
+ *
+ * Should be initialized on startup.
+ */
+extern struct database database;
 
 int
-database_recents(struct paste *, size_t *);
+database_open(struct database *, const char *);
 
 int
-database_get(struct paste *, const char *);
+database_recents(struct database *, struct paste *, size_t *);
 
 int
-database_insert(struct paste *);
+database_get(struct database *, struct paste *, const char *);
 
 int
-database_search(struct paste *,
+database_insert(struct database *, struct paste *);
+
+int
+database_search(struct database *,
+                struct paste *,
                 size_t *,
                 const char *,
                 const char *,
                 const char *);
 
 void
-database_clear(void);
+database_clear(struct database *);
 
 void
-database_finish(void);
+database_finish(struct database *);
 
 #endif /* !PASTER_DATABASE_H */

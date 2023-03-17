@@ -111,7 +111,7 @@ get(struct kreq *req)
 		}
 	};
 
-	if (database_get(&self.paste, req->path) < 0)
+	if (database_get(&database, &self.paste, req->path) < 0)
 		page_status(req, KHTTP_404);
 	else {
 		page(req, KHTTP_200, TITLE, HTML, &self.template);

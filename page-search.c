@@ -110,7 +110,7 @@ post(struct kreq *req)
 	if (author && strlen(author) == 0)
 		author = NULL;
 
-	if (database_search(pastes, &pastesz, title, author, language) < 0)
+	if (database_search(&database, pastes, &pastesz, title, author, language) < 0)
 		page_status(req, KHTTP_500);
 	else {
 		page_index_render(req, pastes, pastesz);

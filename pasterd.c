@@ -16,8 +16,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -26,6 +29,31 @@
 #include "http.h"
 #include "log.h"
 #include "util.h"
+
+/*
+ * Interval in seconds for each cleanup time. Since a paste has one hour
+ * duration as minimal let's cleanup every hour.
+ */
+#define CLEANUP_INTERVAL 3600
+
+static timer_t timer;
+
+/*
+ * This function runs in a thread, we open our own local database to let the
+ * engine locks by itself.
+ */
+static void
+cleanup(union sigval val)
+{
+	(void)val;
+
+	struct database db;
+
+	if (database_open(&db, config.databasepath) == 0) {
+		database_clear(&db);
+		database_finish(&db);
+	}
+}
 
 static void
 defaults(void)
@@ -37,13 +65,26 @@ defaults(void)
 static void
 init(void)
 {
+	struct sigevent sigev = {
+		.sigev_notify = SIGEV_THREAD,
+		.sigev_notify_function = cleanup
+	};
+	struct itimerspec spec = {
+		.it_value = { .tv_sec = CLEANUP_INTERVAL },
+		.it_interval = { .tv_sec = CLEANUP_INTERVAL }
+	};
+
 	srand(time(NULL));
 	log_open();
 
 	if (!config.databasepath[0])
 		die("abort: no database specified\n");
-	if (database_open(config.databasepath) < 0)
+	if (database_open(&database, config.databasepath) < 0)
 		die("abort: could not open database\n");
+	if (timer_create(CLOCK_MONOTONIC, &sigev, &timer) < 0)
+		die("abort: timer_create: %s\n", strerror(errno));
+	if (timer_settime(timer, 0, &spec, NULL) < 0)
+		die("abort: timer_settime: %s\n", strerror(errno));
 }
 
 static void
@@ -55,14 +96,14 @@ run(void)
 static void
 finish(void)
 {
-	database_finish();
+	database_finish(&database);
 	log_finish();
 }
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: paster [-fqv] [-d database-path] [-t theme-directory]\n");
+	fprintf(stderr, "usage: paster [-qv] [-d database-path] [-t theme-directory]\n");
 	exit(1);
 }
 

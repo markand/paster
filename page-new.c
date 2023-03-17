@@ -150,7 +150,7 @@ post(struct kreq *req)
 			raw = strcmp(val, "on") == 0;
 	}
 
-	if (database_insert(&paste) < 0)
+	if (database_insert(&database, &paste) < 0)
 		page_status(req, KHTTP_500);
 	else {
 		scheme = req->scheme == KSCHEME_HTTP ? "http" : "https";
