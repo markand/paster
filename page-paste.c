@@ -19,56 +19,104 @@
 #include <assert.h>
 
 #include "database.h"
-#include "json-util.h"
 #include "page-paste.h"
+#include "page-status.h"
 #include "page.h"
+#include "paste.h"
 #include "util.h"
 
 #include "html/paste.h"
 
-static inline json_t *
-mk_pagetitle(const json_t *paste)
-{
-	return json_sprintf("paster -- %s", ju_get_string(paste, "title"));
-}
+#define TITLE "paster -- paste details"
 
-static inline json_t *
-mk_date(const json_t *paste)
-{
-	return ju_date(ju_get_int(paste, "timestamp"));
-}
+enum {
+	KEYWORD_TITLE,
+	KEYWORD_ID,
+	KEYWORD_AUTHOR,
+	KEYWORD_LANGUAGE,
+	KEYWORD_DATE,
+	KEYWORD_PUBLIC,
+	KEYWORD_EXPIRES,
+	KEYWORD_CODE
+};
 
-static inline json_t *
-mk_public(const json_t *paste)
-{
-	const intmax_t visible = ju_get_int(paste, "visible");
+struct page {
+	struct kreq *req;
+	struct ktemplate template;
+	struct paste paste;
+};
 
-	return json_string(visible ? "Yes" : "No");
-}
+static const char * const keywords[] = {
+	[KEYWORD_TITLE]         = "title",
+	[KEYWORD_ID]            = "id",
+	[KEYWORD_AUTHOR]        = "author",
+	[KEYWORD_LANGUAGE]      = "language",
+	[KEYWORD_DATE]          = "date",
+	[KEYWORD_PUBLIC]        = "public",
+	[KEYWORD_EXPIRES]       = "expires",
+	[KEYWORD_CODE]          = "code"
+};
 
-static inline json_t *
-mk_expires(const json_t *paste)
+static int
+format(size_t keyword, void *data)
 {
-	return ju_expires(
-	    ju_get_int(paste, "timestamp"),
-	    ju_get_int(paste, "duration")
-	);
+	struct page *page = data;
+	struct khtmlreq html;
+
+	khtml_open(&html, page->req, 0);
+
+	switch (keyword) {
+	case KEYWORD_TITLE:
+		khtml_puts(&html, page->paste.title);
+		break;
+	case KEYWORD_ID:
+		khtml_puts(&html, page->paste.id);
+		break;
+	case KEYWORD_AUTHOR:
+		khtml_puts(&html, page->paste.author);
+		break;
+	case KEYWORD_LANGUAGE:
+		khtml_puts(&html, page->paste.language);
+		break;
+	case KEYWORD_DATE:
+		khtml_puts(&html, bstrftime("%F %T", localtime(&page->paste.timestamp)));
+		break;
+	case KEYWORD_PUBLIC:
+		khtml_puts(&html, page->paste.visible ? "Yes" : "No");
+		break;
+	case KEYWORD_EXPIRES:
+		khtml_puts(&html, ttl(page->paste.timestamp, page->paste.duration));
+		break;
+	case KEYWORD_CODE:
+		khtml_puts(&html, page->paste.code);
+		break;
+	default:
+		break;
+	}
+
+	khtml_close(&html);
+
+	return 1;
 }
 
 static void
 get(struct kreq *req)
 {
-	json_t *paste;
+	struct page self = {
+		.req = req,
+		.template = {
+			.cb = format,
+			.arg = &self,
+			.key = keywords,
+			.keysz = NELEM(keywords)
+		}
+	};
 
-	if (!(paste = database_get(req->path)))
+	if (database_get(&self.paste, req->path) < 0)
 		page_status(req, KHTTP_404);
 	else {
-		page(req, KHTTP_200, html_paste, ju_extend(paste, "{so so so so}",
-			"pagetitle",    mk_pagetitle(paste),
-			"date",         mk_date(paste),
-			"public",       mk_public(paste),
-			"expires",      mk_expires(paste)
-		));
+		page(req, KHTTP_200, TITLE, html_paste, &self.template);
+		paste_finish(&self.paste);
 	}
 }
 

@@ -16,17 +16,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
-
-#include <kcgi.h>
 
 #include "database.h"
 #include "http.h"
 #include "log.h"
-
 #include "page-download.h"
 #include "page-fork.h"
 #include "page-index.h"
@@ -34,6 +28,7 @@
 #include "page-paste.h"
 #include "page-search.h"
 #include "page-static.h"
+#include "page-status.h"
 #include "page.h"
 
 enum page {

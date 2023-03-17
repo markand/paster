@@ -4,21 +4,19 @@
 				<table>
 					<tr>
 						<td class="label">Title</td>
-						<td><input name="title" type="text" placeholder="Untitled" value="{{title}}" /></td>
+						<td><input name="title" type="text" placeholder="Untitled" value="@@title@@" /></td>
 					</tr>
 
 					<tr>
 						<td class="label">Author</td>
-						<td><input name="author" type="text" placeholder="Anonymous" value="{{author}}" /></td>
+						<td><input name="author" type="text" placeholder="Anonymous" value="@@author@@" /></td>
 					</tr>
 
 					<tr>
 						<td class="label">Language</td>
 						<td>
 							<select name="language">
-								{{#languages}}
-								<option value="{{name}}" {{selected}}>{{name}}</option>
-								{{/languages}}
+								@@languages@@
 							</select>
 						</td>
 					</tr>
@@ -27,9 +25,7 @@
 						<td class="label">Expires in</td>
 						<td>
 							<select name="duration">
-								{{#durations}}
-								<option value="{{value}}">{{value}}</option>
-								{{/durations}}
+								@@durations@@
 							</select>
 						</td>
 					</tr>
@@ -40,6 +36,6 @@
 					</tr>
 				</table>
 
-				<textarea id="code" class="textarea" placeholder="What do you want to share?" rows="10" name="code">{{code}}</textarea>
+				<textarea id="code" class="textarea" placeholder="What do you want to share?" rows="10" name="code">@@code@@</textarea>
 				<input class="submit" type="submit" value="paste" />
 			</form>

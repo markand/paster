@@ -24,8 +24,8 @@
 #include <sqlite3.h>
 
 #include "database.h"
-#include "json-util.h"
 #include "log.h"
+#include "paste.h"
 #include "util.h"
 
 #include "sql/clear.h"
@@ -35,23 +35,27 @@
 #include "sql/recents.h"
 #include "sql/search.h"
 
-#define ID_MAX (12 + 1)
+#define CHAR(sql) (const char *)(sql)
 
 static sqlite3 *db;
 
-static inline json_t *
-convert(sqlite3_stmt *stmt)
+static char *
+dup(const unsigned char *s)
 {
-	return json_pack("{ss ss ss ss ss sI si si}",
-		"id",           sqlite3_column_text(stmt, 0),
-		"title",        sqlite3_column_text(stmt, 1),
-		"author",       sqlite3_column_text(stmt, 2),
-		"language",     sqlite3_column_text(stmt, 3),
-		"code",         sqlite3_column_text(stmt, 4),
-		"timestamp",    (json_int_t)sqlite3_column_int64(stmt, 5),
-		"visible",      sqlite3_column_int(stmt, 6),
-		"duration",     sqlite3_column_int(stmt, 7)
-	);
+	return estrdup(s ? (const char *)(s) : "");
+}
+
+static void
+convert(sqlite3_stmt *stmt, struct paste *paste)
+{
+	paste->id = dup(sqlite3_column_text(stmt, 0));
+	paste->title = dup(sqlite3_column_text(stmt, 1));
+	paste->author = dup(sqlite3_column_text(stmt, 2));
+	paste->language = dup(sqlite3_column_text(stmt, 3));
+	paste->code = dup(sqlite3_column_text(stmt, 4));
+	paste->timestamp = sqlite3_column_int64(stmt, 5);
+	paste->visible = sqlite3_column_int(stmt, 6);
+	paste->duration = sqlite3_column_int64(stmt, 7);
 }
 
 static int
@@ -62,7 +66,7 @@ exists(const char *id)
 	sqlite3_stmt *stmt = NULL;
 	int ret = 1;
 
-	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) == SQLITE_OK) {
+	if (sqlite3_prepare(db, CHAR(sql_get), -1, &stmt, NULL) == SQLITE_OK) {
 		sqlite3_bind_text(stmt, 1, id, -1, NULL);
 		ret = sqlite3_step(stmt) == SQLITE_ROW;
 		sqlite3_finalize(stmt);
@@ -72,19 +76,24 @@ exists(const char *id)
 }
 
 static const char *
-create_id(char *id)
+create_id(void)
 {
 	static const char table[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+	static char id[12];
 
-	for (int i = 0; i < ID_MAX; ++i)
+	for (size_t i = 0; i < sizeof (id); ++i)
 		id[i] = table[rand() % (sizeof (table) - 1)];
 
-	id[ID_MAX - 1] = 0;
+	return id;
 }
 
 static int
-set_id(json_t *paste)
+set_id(struct paste *paste)
 {
+	assert(paste);
+
+	paste->id = NULL;
+
 	/*
 	 * Avoid infinite loop, we only try to create a new id in 30 steps.
 	 *
@@ -92,18 +101,13 @@ set_id(json_t *paste)
 	 * not try to save with that id.
 	 */
 	int tries = 0;
-	char id[ID_MAX];
 
 	do {
-		create_id(id);
-	} while (++tries < 30 && exists(id));
+		free(paste->id);
+		paste->id = estrdup(create_id());
+	} while (++tries < 30 && exists(paste->id));
 
-	if (tries >= 30)
-		return -1;
-
-	json_object_set_new(paste, "id", json_string(id));
-
-	return 0;
+	return tries < 30 ? 0 : -1;
 }
 
 int
@@ -121,7 +125,7 @@ database_open(const char *path)
 	/* Wait for 30 seconds to lock the database. */
 	sqlite3_busy_timeout(db, 30000);
 
-	if (sqlite3_exec(db, sql_init, NULL, NULL, NULL) != SQLITE_OK) {
+	if (sqlite3_exec(db, CHAR(sql_init), NULL, NULL, NULL) != SQLITE_OK) {
 		log_warn("database: unable to initialize %s: %s", path, sqlite3_errmsg(db));
 		return -1;
 	}
@@ -129,28 +133,30 @@ database_open(const char *path)
 	return 0;
 }
 
-json_t *
-database_recents(size_t limit)
+int
+database_recents(struct paste *pastes, size_t *max)
 {
-	json_t *array = NULL;
+	assert(pastes);
+	assert(max);
+
 	sqlite3_stmt *stmt = NULL;
 	size_t i = 0;
 
+	memset(pastes, 0, *max * sizeof (struct paste));
 	log_debug("database: accessing most recents");
 
-	if (sqlite3_prepare(db, sql_recents, -1, &stmt, NULL) != SQLITE_OK ||
-	    sqlite3_bind_int64(stmt, 1, limit) != SQLITE_OK)
+	if (sqlite3_prepare(db, CHAR(sql_recents), -1, &stmt, NULL) != SQLITE_OK ||
+	    sqlite3_bind_int64(stmt, 1, *max) != SQLITE_OK)
 		goto sqlite_err;
 
-	array = json_array();
-
-	for (; i < limit && sqlite3_step(stmt) == SQLITE_ROW; ++i)
-		json_array_append_new(array, convert(stmt));
+	for (; i < *max && sqlite3_step(stmt) == SQLITE_ROW; ++i)
+		convert(stmt, &pastes[i]);
 
 	log_debug("database: found %zu pastes", i);
 	sqlite3_finalize(stmt);
+	*max = i;
 
-	return array;
+	return 0;
 
 sqlite_err:
 	log_warn("database: error (recents): %s\n", sqlite3_errmsg(db));
@@ -158,26 +164,31 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	return NULL;
+	*max = 0;
+
+	return -1;
 }
 
-json_t *
-database_get(const char *id)
+int
+database_get(struct paste *paste, const char *id)
 {
+	assert(paste);
 	assert(id);
 
-	json_t *object = NULL;
 	sqlite3_stmt* stmt = NULL;
+	int found = -1;
 
-	log_debug("database: accessing paste with uuid: %s", id);
+	memset(paste, 0, sizeof (struct paste));
+	log_debug("database: accessing paste with id: %s", id);
 
-	if (sqlite3_prepare(db, sql_get, -1, &stmt, NULL) != SQLITE_OK ||
+	if (sqlite3_prepare(db, CHAR(sql_get), -1, &stmt, NULL) != SQLITE_OK ||
 	    sqlite3_bind_text(stmt, 1, id, -1, NULL) != SQLITE_OK)
 		goto sqlite_err;
 
 	switch (sqlite3_step(stmt)) {
 	case SQLITE_ROW:
-		object = convert(stmt);
+		convert(stmt, paste);
+		found = 0;
 		break;
 	case SQLITE_MISUSE:
 	case SQLITE_ERROR:
@@ -188,7 +199,7 @@ database_get(const char *id)
 
 	sqlite3_finalize(stmt);
 
-	return object;
+	return found;
 
 sqlite_err:
 	if (stmt)
@@ -196,11 +207,11 @@ sqlite_err:
 
 	log_warn("database: error (get): %s", sqlite3_errmsg(db));
 
-	return NULL;
+	return -1;
 }
 
 int
-database_insert(json_t *paste)
+database_insert(struct paste *paste)
 {
 	assert(paste);
 
@@ -212,23 +223,21 @@ database_insert(json_t *paste)
 		log_warn("database: could not lock database: %s", sqlite3_errmsg(db));
 		return -1;
 	}
-
 	if (set_id(paste) < 0) {
 		log_warn("database: unable to randomize unique identifier");
 		sqlite3_exec(db, "END TRANSACTION", NULL, NULL, NULL);
 		return -1;
 	}
-
-	if (sqlite3_prepare(db, sql_insert, -1, &stmt, NULL) != SQLITE_OK)
+	if (sqlite3_prepare(db, CHAR(sql_insert), -1, &stmt, NULL) != SQLITE_OK)
 		goto sqlite_err;
 
-	sqlite3_bind_text(stmt, 1, ju_get_string(paste, "id"), -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 2, ju_get_string(paste, "title"), -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 3, ju_get_string(paste, "author"), -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 4, ju_get_string(paste, "language"), -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 5, ju_get_string(paste, "code"), -1, SQLITE_STATIC);
-	sqlite3_bind_int(stmt, 6, ju_get_bool(paste, "visible"));
-	sqlite3_bind_int64(stmt, 7, ju_get_int(paste, "duration"));
+	sqlite3_bind_text(stmt, 1, paste->id, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 2, paste->title, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 3, paste->author, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 4, paste->language, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 5, paste->code, -1, SQLITE_STATIC);
+	sqlite3_bind_int(stmt, 6, paste->visible);
+	sqlite3_bind_int64(stmt, 7, paste->duration);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		goto sqlite_err;
@@ -237,10 +246,7 @@ database_insert(json_t *paste)
 	sqlite3_finalize(stmt);
 
 	log_info("database: new paste (%s) from %s expires in one %lld seconds",
-	    ju_get_string(paste, "id"),
-	    ju_get_string(paste, "author"),
-	    ju_get_int(paste, "duration")
-	);
+	    paste->id, paste->author, paste->duration);
 
 	return 0;
 
@@ -251,19 +257,22 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	/* Make sure it is not used anymore. */
-	json_object_del(paste, "id");
+	free(paste->id);
+	paste->id = NULL;
 
-	return 0;
+	return -1;
 }
 
-json_t *
-database_search(size_t limit,
+int
+database_search(struct paste *pastes,
+                size_t *max,
                 const char *title,
                 const char *author,
                 const char *language)
 {
-	json_t *array = NULL;
+	assert(pastes);
+	assert(max);
+
 	sqlite3_stmt *stmt = NULL;
 	size_t i = 0;
 
@@ -272,12 +281,14 @@ database_search(size_t limit,
 	    author   ? author   : "",
 	    language ? language : "");
 
+	memset(pastes, 0, *max * sizeof (struct paste));
+
 	/* Select everything if not specified. */
 	title    = title    ? title    : "%";
 	author   = author   ? author   : "%";
 	language = language ? language : "%";
 
-	if (sqlite3_prepare(db, sql_search, -1, &stmt, NULL) != SQLITE_OK)
+	if (sqlite3_prepare(db, CHAR(sql_search), -1, &stmt, NULL) != SQLITE_OK)
 		goto sqlite_err;
 	if (sqlite3_bind_text(stmt, 1, title, -1, NULL) != SQLITE_OK)
 		goto sqlite_err;
@@ -285,18 +296,17 @@ database_search(size_t limit,
 		goto sqlite_err;
 	if (sqlite3_bind_text(stmt, 3, language, -1, NULL) != SQLITE_OK)
 		goto sqlite_err;
-	if (sqlite3_bind_int64(stmt, 4, limit) != SQLITE_OK)
+	if (sqlite3_bind_int64(stmt, 4, *max) != SQLITE_OK)
 		goto sqlite_err;
 
-	array = json_array();
-
-	for (; i < limit && sqlite3_step(stmt) == SQLITE_ROW; ++i)
-		json_array_append_new(array, convert(stmt));
+	for (; i < *max && sqlite3_step(stmt) == SQLITE_ROW; ++i)
+		convert(stmt, &pastes[i]);
 
 	log_debug("database: found %zu pastes", i);
 	sqlite3_finalize(stmt);
+	*max = i;
 
-	return array;
+	return 0;
 
 sqlite_err:
 	log_warn("database: error (search): %s\n", sqlite3_errmsg(db));
@@ -304,7 +314,9 @@ sqlite_err:
 	if (stmt)
 		sqlite3_finalize(stmt);
 
-	return NULL;
+	*max = 0;
+
+	return -1;
 }
 
 void
@@ -312,7 +324,7 @@ database_clear(void)
 {
 	log_debug("database: clearing deprecated pastes");
 
-	if (sqlite3_exec(db, sql_clear, NULL, NULL, NULL) != SQLITE_OK)
+	if (sqlite3_exec(db, CHAR(sql_clear), NULL, NULL, NULL) != SQLITE_OK)
 		log_warn("database: error (clear): %s\n", sqlite3_errmsg(db));
 }
 

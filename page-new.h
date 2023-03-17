@@ -19,12 +19,11 @@
 #ifndef PASTER_PAGE_NEW_H
 #define PASTER_PAGE_NEW_H
 
-#include <jansson.h>
-
 struct kreq;
+struct paste;
 
 void
-page_new_render(struct kreq *, json_t *);
+page_new_render(struct kreq *, const struct paste *);
 
 void
 page_new(struct kreq *);

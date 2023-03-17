@@ -67,7 +67,7 @@ usage(void)
 }
 
 int
-main(int argc, char **argv, char **env)
+main(int argc, char **argv)
 {
 	const char *value;
 	int opt;

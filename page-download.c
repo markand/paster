@@ -19,15 +19,16 @@
 #include <assert.h>
 
 #include "database.h"
+#include "page-status.h"
 #include "page.h"
-#include "json-util.h"
+#include "paste.h"
 
 static void
 get(struct kreq *req)
 {
-	json_t *paste;
+	struct paste paste;
 
-	if (!(paste = database_get(req->path)))
+	if (database_get(&paste, req->path) < 0)
 		page_status(req, KHTTP_404);
 	else {
 		khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_APP_OCTET_STREAM]);
@@ -37,13 +38,12 @@ get(struct kreq *req)
 #endif
 		khttp_head(req, kresps[KRESP_CONNECTION], "keep-alive");
 		khttp_head(req, kresps[KRESP_CONTENT_DISPOSITION], "attachment; filename=\"%s.%s\"",
-		    ju_get_string(paste, "id"),
-		    ju_get_string(paste, "language")
+			paste.id, paste.language
 		);
 		khttp_body(req);
-		khttp_puts(req, ju_get_string(paste, "code"));
+		khttp_puts(req, paste.code);
 		khttp_free(req);
-		json_decref(paste);
+		paste_finish(&paste);
 	}
 }
 

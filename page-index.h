@@ -19,12 +19,15 @@
 #ifndef PASTER_PAGE_INDEX_H
 #define PASTER_PAGE_INDEX_H
 
-#include <jansson.h>
+#include <stddef.h>
 
 struct kreq;
+struct paste;
 
 void
-page_index_render(struct kreq *, json_t *pastes);
+page_index_render(struct kreq *req,
+                  const struct paste *pastes,
+                  size_t pastesz);
 
 void
 page_index(struct kreq *);

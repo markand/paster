@@ -1,5 +1,5 @@
 /*
- * page.c -- page renderer
+ * page-status.c -- error page
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
  *
@@ -17,30 +17,40 @@
  */
 
 #include <assert.h>
-#include <string.h>
 
-#include "config.h"
 #include "page.h"
 #include "util.h"
 
-#include "html/footer.h"
-#include "html/header.h"
 #include "html/status.h"
 
-#define CHAR(html) (const char *)(html)
-
 enum {
-	KEYWORD_TITLE,
+	KEYWORD_CODE,
+	KEYWORD_MESSAGE
 };
 
 struct page {
 	struct kreq *req;
 	struct ktemplate template;
-	const char *title;
+	enum khttp status;
+};
+
+static const int status_codes[] = {
+	[KHTTP_200]             = 200,
+	[KHTTP_400]             = 400,
+	[KHTTP_404]             = 404,
+	[KHTTP_500]             = 500
+};
+
+static const char * const status_messages[] = {
+	[KHTTP_200]             = "OK",
+	[KHTTP_400]             = "Bad Request",
+	[KHTTP_404]             = "Not Found",
+	[KHTTP_500]             = "Internal Server Error"
 };
 
 static const char *keywords[] = {
-	[KEYWORD_TITLE] = "title"
+	[KEYWORD_CODE]          = "code",
+	[KEYWORD_MESSAGE]       = "message"
 };
 
 static int
@@ -49,8 +59,11 @@ format(size_t keyword, void *data)
 	struct page *page = data;
 
 	switch (keyword) {
-	case KEYWORD_TITLE:
-		khttp_printf(page->req, "%s", page->title);
+	case KEYWORD_CODE:
+		khttp_printf(page->req, "%d", status_codes[page->status]);
+		break;
+	case KEYWORD_MESSAGE:
+		khttp_printf(page->req, "%s", status_messages[page->status]);
 		break;
 	default:
 		break;
@@ -60,16 +73,9 @@ format(size_t keyword, void *data)
 }
 
 void
-page(struct kreq *req,
-     enum khttp status,
-     const char *title,
-     const unsigned char *html,
-     const struct ktemplate *tmpl)
+page_status(struct kreq *req, enum khttp status)
 {
 	assert(req);
-	assert(title);
-	assert(html);
-	assert(tmpl);
 
 	struct page self = {
 		.req = req,
@@ -79,14 +85,8 @@ page(struct kreq *req,
 			.key = keywords,
 			.keysz = NELEM(keywords)
 		},
-		.title = title,
+		.status = status
 	};
 
-	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
-	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[status]);
-	khttp_body(req);
-	khttp_template_buf(req, &self.template, CHAR(html_header), strlen(CHAR(html_header)));
-	khttp_template_buf(req, tmpl, CHAR(html), strlen(CHAR(html)));
-	khttp_template_buf(req, NULL, CHAR(html_footer), strlen(CHAR(html_footer)));
-	khttp_free(req);
+	page(req, status, "paster -- error", html_status, &self.template);
 }

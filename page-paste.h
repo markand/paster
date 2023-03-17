@@ -2,11 +2,11 @@
  * page-paste.h -- page /paste/<id>
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -16,12 +16,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_PAGE_IMAGE_H
-#define PASTER_PAGE_IMAGE_H
+#ifndef PASTER_PAGE_PASTE_H
+#define PASTER_PAGE_PASTE_H
 
 struct kreq;
 
 void
 page_paste(struct kreq *);
 
-#endif /* !PASTER_PAGE_IMAGE_H */
+#endif /* !PASTER_PAGE_PASTE_H */

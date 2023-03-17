@@ -19,9 +19,10 @@
 #include <assert.h>
 
 #include "database.h"
-#include "json-util.h"
 #include "page-index.h"
+#include "page-status.h"
 #include "page.h"
+#include "paste.h"
 #include "util.h"
 
 #include "html/index.h"
@@ -29,27 +30,112 @@
 #define LIMIT 16
 #define TITLE "paster -- recent pastes"
 
+struct page {
+	struct kreq *req;
+	struct ktemplate template;
+	const struct paste *pastes;
+	const size_t pastesz;
+};
+
+enum {
+	KEYWORD_PASTES
+};
+
+static const char * const keywords[] = {
+	[KEYWORD_PASTES] = "pastes"
+};
+
+static int
+format(size_t keyword, void *data)
+{
+	struct page *page = data;
+	struct khtmlreq html;
+	const struct paste *paste;
+
+	khtml_open(&html, page->req, KHTML_PRETTY);
+
+	switch (keyword) {
+	case KEYWORD_PASTES:
+		for (size_t i = 0; i < page->pastesz; ++i) {
+			paste = &page->pastes[i];
+
+			khtml_elem(&html, KELEM_TR);
+
+			/* link */
+			khtml_elem(&html, KELEM_TD);
+			khtml_attr(&html, KELEM_A,
+			    KATTR_HREF, bprintf("/paste/%s", paste->id), KATTR__MAX);
+			khtml_printf(&html, paste->title);
+			khtml_closeelem(&html, 1);
+
+			/* author */
+			khtml_elem(&html, KELEM_TD);
+			khtml_puts(&html, paste->author);
+			khtml_closeelem(&html, 1);
+
+			/* language */
+			khtml_elem(&html, KELEM_TD);
+			khtml_puts(&html, paste->language);
+			khtml_closeelem(&html, 1);
+
+			/* date */
+			khtml_elem(&html, KELEM_TD);
+			khtml_puts(&html, bstrftime("%F %T", localtime(&paste->timestamp)));
+			khtml_closeelem(&html, 1);
+
+			/* expiration */
+			khtml_elem(&html, KELEM_TD);
+			khtml_puts(&html, ttl(paste->timestamp, paste->duration));
+			khtml_closeelem(&html, 1);
+
+			khtml_closeelem(&html, 1);
+
+		}
+		break;
+	default:
+		break;
+	}
+
+	khtml_close(&html);
+
+	return 1;
+}
+
 static void
 get(struct kreq *req)
 {
-	json_t *pastes;
+	struct paste pastes[LIMIT];
+	size_t pastesz = NELEM(pastes);
 
-	if (!(pastes = database_recents(LIMIT)))
+	if (database_recents(pastes, &pastesz) < 0)
 		page_status(req, KHTTP_500);
-	else
-		page_index_render(req, pastes);
+	else {
+		page_index_render(req, pastes, pastesz);
+
+		for (size_t i = 0; i < pastesz; ++i)
+			paste_finish(&pastes[i]);
+	}
 }
 
 void
-page_index_render(struct kreq *req, json_t *pastes)
+page_index_render(struct kreq *req, const struct paste *pastes, size_t pastesz)
 {
 	assert(req);
 	assert(pastes);
 
-	page(req, KHTTP_200, html_index, json_pack("{ss so}",
-		"title",        TITLE,
-		"pastes",       pastes
-	));
+	struct page self = {
+		.req = req,
+		.template = {
+			.cb = format,
+			.arg = &self,
+			.key = keywords,
+			.keysz = NELEM(keywords)
+		},
+		.pastes = pastes,
+		.pastesz = pastesz
+	};
+
+	page(req, KHTTP_200, TITLE, html_index, &self.template);
 }
 
 void

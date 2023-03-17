@@ -27,6 +27,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "paste.h"
 #include "util.h"
 
 const char * const languages[] = {

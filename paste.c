@@ -1,5 +1,5 @@
 /*
- * database.h -- sqlite storage
+ * paste.c -- paste definition
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
  *
@@ -16,36 +16,35 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_DATABASE_H
-#define PASTER_DATABASE_H
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <stddef.h>
-
-struct paste;
-
-int
-database_open(const char *);
-
-int
-database_recents(struct paste *, size_t *);
-
-int
-database_get(struct paste *, const char *);
-
-int
-database_insert(struct paste *);
-
-int
-database_search(struct paste *,
-                size_t *,
-                const char *,
-                const char *,
-                const char *);
+#include "paste.h"
+#include "util.h"
 
 void
-database_clear(void);
+paste_init(struct paste *paste)
+{
+	assert(paste);
+
+	memset(paste, 0, sizeof (*paste));
+	paste->title = estrdup(PASTE_DEFAULT_TITLE);
+	paste->author = estrdup(PASTE_DEFAULT_AUTHOR);
+	paste->language = estrdup(PASTE_DEFAULT_LANGUAGE);
+	paste->timestamp = time(NULL);
+	paste->duration = PASTE_DURATION_DAY;
+}
 
 void
-database_finish(void);
+paste_finish(struct paste *paste)
+{
+	assert(paste);
 
-#endif /* !PASTER_DATABASE_H */
+	free(paste->id);
+	free(paste->title);
+	free(paste->author);
+	free(paste->language);
+	free(paste->code);
+	memset(paste, 0, sizeof (struct paste));
+}

@@ -24,11 +24,6 @@
 
 #define NELEM(x) (sizeof (x) / sizeof (x)[0])
 
-#define PASTE_DURATION_HOUR     (3600)
-#define PASTE_DURATION_DAY      (PASTE_DURATION_HOUR * 24)
-#define PASTE_DURATION_WEEK     (PASTE_DURATION_DAY * 7)
-#define PASTE_DURATION_MONTH    (PASTE_DURATION_DAY * 30)
-
 struct tm;
 struct kreq;
 

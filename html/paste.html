@@ -1,42 +1,42 @@
-	<h1>Paste {{title}}</h1>
+	<h1>Paste @@title@@</h1>
 
 	<ul id="paste-menu">
-		<li><a href="/fork/{{id}}">Fork</a></li>
-		<li><a href="/download/{{id}}">Download</a></li>
+		<li><a href="/fork/@@id@@">Fork</a></li>
+		<li><a href="/download/@@id@@">Download</a></li>
 	</ul>
 
 	<table>
 		<tbody>
 			<tr>
 				<td class="label">Identifier</td>
-				<td>{{id}}</td>
+				<td>@@id@@</td>
 			</tr>
 			<tr>
 				<td class="label">Title</td>
-				<td>{{title}}</td>
+				<td>@@title@@</td>
 			</tr>
 			<tr>
 				<td class="label">Author</td>
-				<td>{{author}}</td>
+				<td>@@author@@</td>
 			</tr>
 			<tr>
 				<td class="label">Language</td>
-				<td>{{language}}</td>
+				<td>@@language@@</td>
 			</tr>
 			<tr>
 				<td class="label">Date</td>
-				<td>{{date}}</td>
+				<td>@@date@@</td>
 			</tr>
 			<tr>
 				<td class="label">Public</td>
-				<td>{{public}}</td>
+				<td>@@public@@</td>
 			</tr>
 			<tr>
 				<td class="label">Expires in</td>
-				<td>{{expires}}</td>
+				<td>@@expires@@</td>
 			</tr>
 		</tbody>
 	</table>
 	<pre>
-{{code}}
+@@code@@
 	</pre>

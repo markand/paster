@@ -30,25 +30,17 @@ MANDIR ?=       $(PREFIX)/share/man
 VARDIR ?=       $(PREFIX)/var
 
 # External libraries
-KCGI_INCS :=    $(shell pkg-config --cflags kcgi)
-KCGI_LIBS :=    $(shell pkg-config --libs kcgi)
-
-JANSSON_INCS := $(shell pkg-config --cflags jansson)
-JANSSON_LIBS := $(shell pkg-config --libs jansson)
+KCGI_INCS :=    $(shell pkg-config --cflags kcgi kcgi-html)
+KCGI_LIBS :=    $(shell pkg-config --libs kcgi kcgi-html)
 
 # No user options below this line.
 
 VERSION :=              0.3.0
 
-LIBPASTER_SRCS :=       extern/libmustach/mustach-jansson.c
-LIBPASTER_SRCS +=       extern/libmustach/mustach-wrap.c
-LIBPASTER_SRCS +=       extern/libmustach/mustach.c
-LIBPASTER_SRCS +=       extern/libmustach/mustach.c
 LIBPASTER_SRCS +=       extern/libsqlite/sqlite3.c
 LIBPASTER_SRCS +=       config.c
 LIBPASTER_SRCS +=       database.c
 LIBPASTER_SRCS +=       http.c
-LIBPASTER_SRCS +=       json-util.c
 LIBPASTER_SRCS +=       log.c
 LIBPASTER_SRCS +=       page-download.c
 LIBPASTER_SRCS +=       page-fork.c
@@ -57,7 +49,9 @@ LIBPASTER_SRCS +=       page-new.c
 LIBPASTER_SRCS +=       page-paste.c
 LIBPASTER_SRCS +=       page-search.c
 LIBPASTER_SRCS +=       page-static.c
+LIBPASTER_SRCS +=       page-status.c
 LIBPASTER_SRCS +=       page.c
+LIBPASTER_SRCS +=       paste.c
 LIBPASTER_SRCS +=       util.c
 LIBPASTER_OBJS :=       $(LIBPASTER_SRCS:.c=.o)
 LIBPASTER_DEPS :=       $(LIBPASTER_SRCS:.c=.d)
@@ -92,10 +86,8 @@ override CFLAGS +=      -DSHAREDIR=\"$(SHAREDIR)\"
 override CFLAGS +=      -DVARDIR=\"$(VARDIR)\"
 override CFLAGS +=      -I.
 override CFLAGS +=      -Iextern
-override CFLAGS +=      -Iextern/libmustach
 override CFLAGS +=      -Iextern/libsqlite
 override CFLAGS +=      $(KCGI_INCS)
-override CFLAGS +=      $(JANSSON_INCS)
 
 override CPPFLAGS :=    -MMD
 
@@ -123,7 +115,7 @@ $(LIBPASTER_HTML_OBJS): extern/bcc/bcc
 $(LIBPASTER_SRCS): $(LIBPASTER_HTML_OBJS) $(LIBPASTER_SQL_OBJS)
 $(LIBPASTER): $(LIBPASTER_OBJS)
 
-pasterd: private LDLIBS += $(KCGI_LIBS) $(JANSSON_LIBS)
+pasterd: private LDLIBS += $(KCGI_LIBS)
 pasterd: $(LIBPASTER)
 
 clean:

@@ -2,11 +2,11 @@
  * log.c -- logging routines
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
- * 
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -42,7 +42,7 @@ log_write(enum log_level level, const char *fmt, ...)
 	assert(level >= LOG_LEVEL_WARNING && level <= LOG_LEVEL_DEBUG);
 	assert(fmt);
 
-	if (config.verbosity >= level) {
+	if (config.verbosity >= (int)level) {
 		va_list ap;
 
 		va_start(ap, fmt);

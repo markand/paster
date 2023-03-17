@@ -20,10 +20,11 @@
 #include <string.h>
 
 #include "database.h"
-#include "json-util.h"
 #include "page-index.h"
 #include "page-search.h"
+#include "page-status.h"
 #include "page.h"
+#include "paste.h"
 #include "util.h"
 
 #include "html/search.h"
@@ -31,19 +32,65 @@
 #define TITLE    "paster -- search"
 #define LIMIT    16
 
+enum {
+	KEYWORD_LANGUAGES
+};
+
+struct page {
+	struct kreq *req;
+	struct ktemplate template;
+};
+
+static const char * const keywords[] = {
+	[KEYWORD_LANGUAGES] = "languages"
+};
+
+static int
+format(size_t keyword, void *data)
+{
+	struct page *page = data;
+	struct khtmlreq html;
+
+	khtml_open(&html, page->req, 0);
+
+	switch (keyword) {
+	case KEYWORD_LANGUAGES:
+		for (size_t i = 0; i < languagesz; ++i) {
+			khtml_attr(&html, KELEM_OPTION, KATTR_NAME, languages[i], KATTR__MAX);
+			khtml_puts(&html, languages[i]);
+			khtml_closeelem(&html, 1);
+		}
+		break;
+	default:
+		break;
+	}
+
+	khtml_close(&html);
+
+	return 1;
+}
+
 static void
 get(struct kreq *req)
 {
-	page(req, KHTTP_200, html_search, json_pack("{ss so}",
-		"pagetitle",    "paster -- search",
-		"languages",    ju_languages(NULL)
-	));
+	struct page self = {
+		.req = req,
+		.template = {
+			.cb = format,
+			.arg = &self,
+			.key = keywords,
+			.keysz = NELEM(keywords)
+		}
+	};
+
+	page(req, KHTTP_200, TITLE, html_search, &self.template);
 }
 
 static void
 post(struct kreq *req)
 {
-	json_t *pastes;
+	struct paste pastes[LIMIT];
+	size_t pastesz = NELEM(pastes);
 	const char *key, *val, *title = NULL, *author = NULL, *language = NULL;
 
 	for (size_t i = 0; i < req->fieldsz; ++i) {
@@ -64,10 +111,14 @@ post(struct kreq *req)
 	if (author && strlen(author) == 0)
 		author = NULL;
 
-	if (!(pastes = database_search(16, title, author, language)))
+	if (database_search(pastes, &pastesz, title, author, language) < 0)
 		page_status(req, KHTTP_500);
-	else
-		page_index_render(req, pastes);
+	else {
+		page_index_render(req, pastes, pastesz);
+
+		for (size_t i = 0; i < pastesz; ++i)
+			paste_finish(&pastes[i]);
+	}
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * database.h -- sqlite storage
+ * paste.h -- paste definition
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
  *
@@ -16,36 +16,35 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_DATABASE_H
-#define PASTER_DATABASE_H
+#ifndef PASTER_PASTE_H
+#define PASTER_PASTE_H
 
-#include <stddef.h>
+#include <time.h>
 
-struct paste;
+#define PASTE_DURATION_HOUR      3600           /* Seconds in one hour. */
+#define PASTE_DURATION_DAY       86400          /* Seconds in one day. */
+#define PASTE_DURATION_WEEK      604800         /* Seconds in one week. */
+#define PASTE_DURATION_MONTH     2592000        /* Rounded to 30 days. */
 
-int
-database_open(const char *);
+#define PASTE_DEFAULT_TITLE      "Untitled"
+#define PASTE_DEFAULT_AUTHOR     "Anonymous"
+#define PASTE_DEFAULT_LANGUAGE   "nohighlight"
 
-int
-database_recents(struct paste *, size_t *);
-
-int
-database_get(struct paste *, const char *);
-
-int
-database_insert(struct paste *);
-
-int
-database_search(struct paste *,
-                size_t *,
-                const char *,
-                const char *,
-                const char *);
-
-void
-database_clear(void);
+struct paste {
+	char *id;
+	char *title;
+	char *author;
+	char *language;
+	char *code;
+	time_t timestamp;
+	int visible;
+	int duration;
+};
 
 void
-database_finish(void);
+paste_init(struct paste *paste);
 
-#endif /* !PASTER_DATABASE_H */
+void
+paste_finish(struct paste *paste);
+
+#endif /* !PASTER_PASTE_H */

@@ -1,5 +1,5 @@
 /*
- * database.h -- sqlite storage
+ * page-status.h -- error page
  *
  * Copyright (c) 2020-2023 David Demelier <markand@malikania.fr>
  *
@@ -16,36 +16,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PASTER_DATABASE_H
-#define PASTER_DATABASE_H
+#ifndef PASTER_PAGE_STATUS_H
+#define PASTER_PAGE_STATUS_H
 
-#include <stddef.h>
+struct kreq;
 
-struct paste;
-
-int
-database_open(const char *);
-
-int
-database_recents(struct paste *, size_t *);
-
-int
-database_get(struct paste *, const char *);
-
-int
-database_insert(struct paste *);
-
-int
-database_search(struct paste *,
-                size_t *,
-                const char *,
-                const char *,
-                const char *);
+enum khttp;
 
 void
-database_clear(void);
+page_status(struct kreq *req, enum khttp status);
 
-void
-database_finish(void);
-
-#endif /* !PASTER_DATABASE_H */
+#endif /* !PASTER_PAGE_NEW_H */
