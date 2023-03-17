@@ -27,7 +27,8 @@
 #include "paste.h"
 #include "util.h"
 
-#define TITLE "paster -- create a new paste"
+#define TITLE   "paster -- create a new paste"
+#define HTML    "new.html"
 
 enum {
 	KEYWORD_TITLE,
@@ -188,7 +189,7 @@ page_new_render(struct kreq *req, const struct paste *paste)
 		.paste = paste
 	};
 
-	page(req, KHTTP_200, TITLE, "new.html", &self.template);
+	page(req, KHTTP_200, TITLE, HTML, &self.template);
 }
 
 void

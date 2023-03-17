@@ -21,6 +21,9 @@
 #include "page.h"
 #include "util.h"
 
+#define TITLE   "paster -- error"
+#define HTML    "status.html"
+
 enum {
 	KEYWORD_CODE,
 	KEYWORD_MESSAGE
@@ -86,5 +89,5 @@ page_status(struct kreq *req, enum khttp status)
 		.status = status
 	};
 
-	page(req, status, "paster -- error", "status.html", &self.template);
+	page(req, status, TITLE, HTML, &self.template);
 }

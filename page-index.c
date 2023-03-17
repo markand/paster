@@ -25,8 +25,9 @@
 #include "paste.h"
 #include "util.h"
 
-#define LIMIT 16
-#define TITLE "paster -- recent pastes"
+#define TITLE   "paster -- recent pastes"
+#define HTML    "index.html"
+#define LIMIT   16
 
 struct page {
 	struct kreq *req;
@@ -133,7 +134,7 @@ page_index_render(struct kreq *req, const struct paste *pastes, size_t pastesz)
 		.pastesz = pastesz
 	};
 
-	page(req, KHTTP_200, TITLE, "index.html", &self.template);
+	page(req, KHTTP_200, TITLE, HTML, &self.template);
 }
 
 void

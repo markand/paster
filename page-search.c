@@ -28,6 +28,7 @@
 #include "util.h"
 
 #define TITLE    "paster -- search"
+#define HTML     "search.html"
 #define LIMIT    16
 
 enum {
@@ -81,7 +82,7 @@ get(struct kreq *req)
 		}
 	};
 
-	page(req, KHTTP_200, TITLE, "search.html", &self.template);
+	page(req, KHTTP_200, TITLE, HTML, &self.template);
 }
 
 static void
