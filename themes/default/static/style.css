@@ -16,11 +16,11 @@
 }
 
 :root {
-	--main-color1: #254E70;
-	--main-color2: #37718E;
-	--main-color3: #8EE3EF;
-	--main-color4: #AEF3E7;
-	--main-color5: #C33C54;
+	--main-color1: #023E8A;
+	--main-color2: #0077B6;
+	--main-color3: #0096C7;
+	--main-color4: #00B4D8;
+	--main-color5: #48CAE4;
 }
 
 a {
@@ -50,7 +50,7 @@ pre {
 }
 
 #nav-links {
-	background-color: var(--main-color1);
+	background-color: var(--main-color2);
 	list-style-type: none;
 	display: flex;
 }
@@ -68,7 +68,7 @@ pre {
 }
 
 #nav a:hover {
-	background-color: var(--main-color2);
+	background-color: var(--main-color3);
 }
 
 #container {
@@ -105,16 +105,6 @@ pre {
 	width: 100%;
 }
 
-.submit {
-	background-color: var(--main-color2);
-	color: #ffffff;
-	border: 0;
-	border-radius: 2px;
-	padding: 0.5em;
-	margin-top: 1em;
-	font-size: medium;
-}
-
 /*
  * Other generic stuff.
  */
@@ -129,4 +119,30 @@ td, th {
 
 pre {
 	white-space: pre-line;
+}
+
+input, select, textarea {
+	background-color: transparent;
+	border: 0;
+	box-shadow: #d9d9d9 0px 1px 2px;
+	padding: 0.3em;
+	border: 1px solid transparent;
+	outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+	border: 1px solid var(--main-color3);
+}
+
+input[type=text], input[type=checkbox] {
+	background-color: transparent;
+	box-shadow: #d9d9d9 0px 1px 2px;
+}
+
+input[type=submit] {
+	background-color: var(--main-color1);
+	color: #ffffff;
+	border-radius: 2px;
+	margin-top: 1em;
+	font-size: medium;
 }
