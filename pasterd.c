@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,23 +37,41 @@
  */
 #define CLEANUP_INTERVAL 3600
 
-static timer_t timer;
+static pthread_t thread;
+static sig_atomic_t running = 1;
 
 /*
  * This function runs in a thread, we open our own local database to let the
  * engine locks by itself.
  */
-static void
-cleanup(union sigval val)
+static void *
+cleanup(void *data)
 {
-	(void)val;
+	(void)data;
 
 	struct database db;
+	sigset_t sigs;
 
-	if (database_open(&db, config.databasepath) == 0) {
-		database_clear(&db);
-		database_finish(&db);
+	sigemptyset(&sigs);
+	sigfillset(&sigs);
+	pthread_sigmask(SIG_BLOCK, &sigs, NULL);
+
+	for (;;) {
+		sleep(CLEANUP_INTERVAL);
+
+		if (database_open(&db, config.databasepath) == 0) {
+			database_clear(&db);
+			database_finish(&db);
+		}
 	}
+
+	return NULL;
+}
+
+static void
+stop(int n)
+{
+	running = 0;
 }
 
 static void
@@ -65,14 +84,20 @@ defaults(void)
 static void
 init(void)
 {
-	struct sigevent sigev = {
-		.sigev_notify = SIGEV_THREAD,
-		.sigev_notify_function = cleanup
-	};
 	struct itimerspec spec = {
 		.it_value = { .tv_sec = CLEANUP_INTERVAL },
 		.it_interval = { .tv_sec = CLEANUP_INTERVAL }
 	};
+	struct sigaction sa = {0};
+
+	/* Setup signal handlers. */
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = stop;
+
+	if (sigaction(SIGINT, &sa, NULL) < 0 || sigaction(SIGTERM, &sa, NULL) < 0)
+		die("abort: sigaction: %s\n", strerror(errno));
+	if (pthread_create(&thread, NULL, cleanup, NULL) < 0)
+		die("abort: pthread_create: %s", strerror(errno));
 
 	srand(time(NULL));
 	log_open();
@@ -81,16 +106,13 @@ init(void)
 		die("abort: no database specified\n");
 	if (database_open(&database, config.databasepath) < 0)
 		die("abort: could not open database\n");
-	if (timer_create(CLOCK_MONOTONIC, &sigev, &timer) < 0)
-		die("abort: timer_create: %s\n", strerror(errno));
-	if (timer_settime(timer, 0, &spec, NULL) < 0)
-		die("abort: timer_settime: %s\n", strerror(errno));
 }
 
 static void
 run(void)
 {
-	http_fcgi_run();
+	while (running)
+		http_fcgi_run();
 }
 
 static void

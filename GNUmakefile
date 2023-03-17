@@ -106,7 +106,7 @@ $(LIBPASTER_SQL_OBJS): extern/bcc/bcc
 $(LIBPASTER_SRCS): $(LIBPASTER_SQL_OBJS)
 $(LIBPASTER): $(LIBPASTER_OBJS)
 
-pasterd: private LDLIBS += $(KCGI_LIBS)
+pasterd: private LDLIBS += $(KCGI_LIBS) -lpthread
 pasterd: $(LIBPASTER)
 
 clean:
