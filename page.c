@@ -23,12 +23,6 @@
 #include "page.h"
 #include "util.h"
 
-#include "html/footer.h"
-#include "html/header.h"
-#include "html/status.h"
-
-#define CHAR(html) (const char *)(html)
-
 enum {
 	KEYWORD_TITLE,
 };
@@ -63,12 +57,12 @@ void
 page(struct kreq *req,
      enum khttp status,
      const char *title,
-     const unsigned char *html,
+     const char *filename,
      const struct ktemplate *tmpl)
 {
 	assert(req);
 	assert(title);
-	assert(html);
+	assert(filename);
 	assert(tmpl);
 
 	struct page self = {
@@ -85,8 +79,8 @@ page(struct kreq *req,
 	khttp_head(req, kresps[KRESP_CONTENT_TYPE], "%s", kmimetypes[KMIME_TEXT_HTML]);
 	khttp_head(req, kresps[KRESP_STATUS], "%s", khttps[status]);
 	khttp_body(req);
-	khttp_template_buf(req, &self.template, CHAR(html_header), strlen(CHAR(html_header)));
-	khttp_template_buf(req, tmpl, CHAR(html), strlen(CHAR(html)));
-	khttp_template_buf(req, NULL, CHAR(html_footer), strlen(CHAR(html_footer)));
+	khttp_template(req, &self.template, path("header.html"));
+	khttp_template(req, tmpl, path(filename));
+	khttp_template(req, NULL, path("footer.html"));
 	khttp_free(req);
 }

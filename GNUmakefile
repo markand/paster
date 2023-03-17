@@ -57,15 +57,6 @@ LIBPASTER_OBJS :=       $(LIBPASTER_SRCS:.c=.o)
 LIBPASTER_DEPS :=       $(LIBPASTER_SRCS:.c=.d)
 LIBPASTER :=            libpaster.a
 
-LIBPASTER_HTML_SRCS :=  html/footer.html
-LIBPASTER_HTML_SRCS +=  html/header.html
-LIBPASTER_HTML_SRCS +=  html/index.html
-LIBPASTER_HTML_SRCS +=  html/new.html
-LIBPASTER_HTML_SRCS +=  html/paste.html
-LIBPASTER_HTML_SRCS +=  html/search.html
-LIBPASTER_HTML_SRCS +=  html/status.html
-LIBPASTER_HTML_OBJS :=  $(LIBPASTER_HTML_SRCS:.html=.h)
-
 LIBPASTER_SQL_SRCS :=   sql/clear.sql
 LIBPASTER_SQL_SRCS +=   sql/get.sql
 LIBPASTER_SQL_SRCS +=   sql/init.sql
@@ -111,8 +102,8 @@ all: pasterd paster
 %.a:
 	$(AR) -rc $@ $^
 
-$(LIBPASTER_HTML_OBJS): extern/bcc/bcc
-$(LIBPASTER_SRCS): $(LIBPASTER_HTML_OBJS) $(LIBPASTER_SQL_OBJS)
+$(LIBPASTER_SQL_OBJS): extern/bcc/bcc
+$(LIBPASTER_SRCS): $(LIBPASTER_SQL_OBJS)
 $(LIBPASTER): $(LIBPASTER_OBJS)
 
 pasterd: private LDLIBS += $(KCGI_LIBS)
@@ -120,7 +111,7 @@ pasterd: $(LIBPASTER)
 
 clean:
 	rm -f extern/bcc/bcc extern/bcc/bcc.d
-	rm -f $(LIBPASTER) $(LIBPASTER_OBJS) $(LIBPASTER_DEPS) $(LIBPASTER_HTML_OBJS) $(LIBPASTER_SQL_OBJS)
+	rm -f $(LIBPASTER) $(LIBPASTER_OBJS) $(LIBPASTER_DEPS) $(LIBPASTER_SQL_OBJS)
 	rm -f paster pasterd pasterd.d
 	rm -f test.db $(TESTS_OBJS)
 
@@ -139,7 +130,6 @@ install-pasterd:
 	mkdir -p $(DESTDIR)$(SHAREDIR)/paster
 	cp -R themes $(DESTDIR)$(SHAREDIR)/paster
 	$(SED) < pasterd.8 > $(DESTDIR)$(MANDIR)/man8/pasterd.8
-	$(SED) < pasterd-themes.5 > $(DESTDIR)$(MANDIR)/man5/pasterd-themes.5
 
 install: install-pasterd install-paster
 

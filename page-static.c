@@ -46,8 +46,7 @@ get(struct kreq *req)
 	struct stat st;
 	char path[PATH_MAX];
 
-	/* Skip /static part that we don't want in the theme directory. */
-	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath + 7);
+	snprintf(path, sizeof (path), "%s%s", config.themedir, req->fullpath);
 
 	if (stat(path, &st) < 0)
 		page_status(req, KHTTP_404);

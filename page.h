@@ -30,7 +30,7 @@ void
 page(struct kreq *req,
      enum khttp status,
      const char *title,
-     const unsigned char *html,
+     const char *filename,
      const struct ktemplate *tmpl);
 
 #endif /* !PASTER_PAGE_H */

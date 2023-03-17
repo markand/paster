@@ -25,8 +25,6 @@
 #include "paste.h"
 #include "util.h"
 
-#include "html/paste.h"
-
 #define TITLE "paster -- paste details"
 
 enum {
@@ -115,7 +113,7 @@ get(struct kreq *req)
 	if (database_get(&self.paste, req->path) < 0)
 		page_status(req, KHTTP_404);
 	else {
-		page(req, KHTTP_200, TITLE, html_paste, &self.template);
+		page(req, KHTTP_200, TITLE, "paste.html", &self.template);
 		paste_finish(&self.paste);
 	}
 }

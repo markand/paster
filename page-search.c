@@ -27,8 +27,6 @@
 #include "paste.h"
 #include "util.h"
 
-#include "html/search.h"
-
 #define TITLE    "paster -- search"
 #define LIMIT    16
 
@@ -83,7 +81,7 @@ get(struct kreq *req)
 		}
 	};
 
-	page(req, KHTTP_200, TITLE, html_search, &self.template);
+	page(req, KHTTP_200, TITLE, "search.html", &self.template);
 }
 
 static void
